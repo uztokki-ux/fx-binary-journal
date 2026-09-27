@@ -1,0 +1,1337 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FX Binary Journal</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#0a0c11; --panel:#12151d; --panel2:#171b25; --border:#232733;
+  --text:#eef1f7; --muted:#727d92; --mint:#00e2a0; --coral:#ff5a6e; --accent:#6c8cff;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;position:relative;overflow-x:hidden;}
+.blob{position:fixed;border-radius:50%;filter:blur(70px);opacity:.16;z-index:0;pointer-events:none;animation:floatBlob 16s ease-in-out infinite;}
+.blob1{width:420px;height:420px;background:var(--mint);top:-120px;right:-100px;}
+.blob2{width:380px;height:380px;background:var(--accent);bottom:-140px;left:-100px;animation-delay:3s;}
+@keyframes floatBlob{0%,100%{transform:translate(0,0)}50%{transform:translate(30px,-25px)}}
+::-webkit-scrollbar{height:8px;width:8px}::-webkit-scrollbar-thumb{background:#2a3140;border-radius:6px}
+.nav{display:flex;align-items:center;padding:14px 20px;border-bottom:1px solid var(--border);position:sticky;top:0;background:rgba(10,12,17,.85);backdrop-filter:blur(10px);z-index:5;}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.4px;font-size:16px;}
+.brand .dot{width:9px;height:9px;border-radius:50%;background:var(--mint);box-shadow:0 0 12px var(--mint);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.wrap{max-width:1080px;margin:0 auto;padding:20px 16px 70px;position:relative;z-index:1;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.tabBar{position:sticky;top:47px;z-index:4;display:flex;gap:6px;max-width:1080px;margin:0 auto;padding:10px 16px;background:rgba(10,12,17,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);overflow-x:auto;}
+.tabBtn{flex:none;display:flex;align-items:center;gap:7px;padding:9px 16px;border-radius:12px;border:1px solid transparent;background:transparent;color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;transition:.2s;white-space:nowrap;}
+.tabIco{font-size:14px;}
+.tabBtn:hover{color:var(--text);background:rgba(255,255,255,.05);}
+.tabBtn.active{color:var(--bg);background:linear-gradient(90deg,var(--mint),#00c48c);box-shadow:0 6px 18px rgba(0,226,160,.3);}
+.tabPanel{display:none;}
+.tabPanel.active{display:block;animation:tabIn .35s ease both;}
+@keyframes tabIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.calAlign{max-width:640px;margin-left:auto;margin-right:0;}
+.newsAlign{max-width:640px;margin-right:auto;margin-left:0;}
+@media(max-width:760px){.calAlign,.newsAlign{max-width:100%;}}
+.card{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--border);border-radius:16px;padding:18px;margin-bottom:16px;animation:fadeUp .55s ease both;box-shadow:0 8px 24px rgba(0,0,0,.25);transition:box-shadow .25s,transform .25s;}
+.card:hover{box-shadow:0 14px 34px rgba(0,0,0,.4);}
+h2{font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin:0 0 12px;display:flex;justify-content:space-between;align-items:center;}
+.collToggle{background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;transition:transform .3s ease,color .2s;padding:2px 6px;}
+.collToggle:hover{color:var(--accent)}
+.collToggle.closed{transform:rotate(-90deg);}
+.collapsible{overflow:visible;transition:max-height .4s ease, opacity .3s ease;opacity:1;padding-top:16px;margin-top:-16px;}
+.collapsible.closed{max-height:0;opacity:0;overflow:hidden;}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;}
+.stat{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;padding:12px;transition:.2s;}
+.stat:hover{transform:translateY(-3px);border-color:var(--accent);}
+.stat b{display:block;font-size:20px;font-variant-numeric:tabular-nums;}
+.stat span{color:var(--muted);font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;}
+.mint{color:var(--mint)} .coral{color:var(--coral)}
+label{font-size:11px;color:var(--muted);display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px;}
+select,input,textarea{width:100%;padding:10px;border:1px solid var(--border);border-radius:10px;background:#0d1017;color:var(--text);font-size:14px;transition:.15s;}
+select:focus,input:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(108,140,255,.15);}
+textarea{min-height:48px;resize:vertical;}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:10px;}
+.dirbtns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+.dirbtn{padding:17px;border-radius:14px;border:2px solid var(--border);background:#0d1017;color:var(--muted);font-weight:800;font-size:16px;cursor:pointer;text-align:center;transition:.18s;}
+.dirbtn:active{transform:scale(.97)}
+.dirbtn.call.active{border-color:var(--mint);color:var(--mint);background:rgba(0,226,160,.1);box-shadow:0 0 22px rgba(0,226,160,.3);}
+.dirbtn.put.active{border-color:var(--coral);color:var(--coral);background:rgba(255,90,110,.1);box-shadow:0 0 22px rgba(255,90,110,.3);}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+.chip{padding:7px 13px;border-radius:20px;border:1px solid var(--border);background:#0d1017;color:var(--muted);font-size:12px;cursor:pointer;transition:.15s;}
+.chip:hover{border-color:var(--accent);}
+.chip.active{border-color:var(--accent);color:var(--accent);background:rgba(108,140,255,.14);}
+.resbtns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;}
+.resbtn{padding:10px;border-radius:10px;border:1px solid var(--border);background:#0d1017;color:var(--muted);font-size:13px;cursor:pointer;font-weight:700;transition:.15s;}
+.resbtn.win.active{border-color:var(--mint);color:var(--mint);background:rgba(0,226,160,.1);}
+.resbtn.loss.active{border-color:var(--coral);color:var(--coral);background:rgba(255,90,110,.1);}
+.resbtn.draw.active{border-color:var(--muted);color:var(--text);background:rgba(255,255,255,.06);}
+.overlapRow{display:grid;grid-template-columns:1fr 2fr;gap:10px;align-items:end;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;padding:10px;margin-bottom:8px;animation:fadeUp .3s ease both;}
+.qualityBtns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.overlapRow .resbtns{margin-bottom:0;}
+button.submit{width:100%;padding:14px;border:none;border-radius:12px;background:linear-gradient(90deg,var(--mint),#00c48c);color:#04140f;font-weight:800;font-size:14.5px;cursor:pointer;margin-top:4px;transition:.2s;}
+button.submit.editMode{background:linear-gradient(90deg,#f5b942,#e0943a);color:#2a1a00;}
+#tradeFormCard{transition:box-shadow .3s ease,border-color .3s ease;}
+#tradeFormCard.editing{border-color:#f5b942;box-shadow:0 0 0 3px rgba(245,185,66,.18),0 8px 24px rgba(0,0,0,.25);animation:editPulse 2s ease-in-out infinite;}
+@keyframes editPulse{0%,100%{box-shadow:0 0 0 3px rgba(245,185,66,.12),0 8px 24px rgba(0,0,0,.25);}50%{box-shadow:0 0 0 5px rgba(245,185,66,.28),0 8px 24px rgba(0,0,0,.25);}}
+.editBanner{display:none;align-items:center;justify-content:space-between;gap:12px;background:rgba(245,185,66,.12);border:1px solid rgba(245,185,66,.4);color:#f5b942;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12.5px;font-weight:700;animation:fadeUp .35s ease both;}
+.editBanner.show{display:flex;}
+.editBanner button{background:rgba(245,185,66,.18);border:1px solid rgba(245,185,66,.5);color:#f5b942;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:800;cursor:pointer;transition:.15s;flex:none;}
+.editBanner button:hover{background:rgba(245,185,66,.3);}
+.editBtn{background:none;color:var(--accent);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px;padding:3px 7px;transition:.15s;margin-right:4px;}
+.editBtn:hover{border-color:var(--accent);background:rgba(108,140,255,.1);transform:translateY(-1px) scale(1.05);}
+button.submit:hover{filter:brightness(1.08);transform:translateY(-1px);}
+button.submit:active{transform:scale(.98);}
+.tablewrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:880px;}
+th,td{text-align:left;padding:8px;border-bottom:1px solid var(--border);white-space:nowrap;}
+th{color:var(--muted);font-weight:500;font-size:10.5px;text-transform:uppercase;}
+tbody tr{transition:.15s}
+tbody tr:hover{background:rgba(255,255,255,.03)}
+.badge{padding:3px 9px;border-radius:12px;font-size:10.5px;font-weight:800;}
+.badge.win{background:rgba(0,226,160,.15);color:var(--mint);}
+.badge.loss{background:rgba(255,90,110,.15);color:var(--coral);}
+.badge.draw{background:rgba(255,255,255,.08);color:var(--muted);}
+.badge.ov{background:rgba(245,185,66,.15);color:#f5b942;}
+.badge.sess{background:rgba(108,140,255,.15);color:var(--accent);}
+.sessGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;}
+.sessTile{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:14px;padding:14px;transition:.25s;}
+.sessTile:hover{transform:translateY(-4px);border-color:var(--accent);box-shadow:0 10px 24px rgba(0,0,0,.3);}
+.sessHead{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.sessEmoji{font-size:17px;}
+.sessName{font-size:11.5px;font-weight:700;}
+.sessTime{font-size:11px;color:var(--accent);font-weight:700;margin-top:2px;letter-spacing:.2px;}
+.sessTimeMsk{color:var(--muted);font-weight:500;font-size:9.5px;text-transform:uppercase;}
+.sessWr{font-size:22px;font-weight:800;margin-top:2px;font-variant-numeric:tabular-nums;}
+.sessRow{display:flex;justify-content:space-between;font-size:10.5px;color:var(--muted);margin-top:6px;}
+.sessBar{height:6px;border-radius:4px;background:#1c212c;overflow:hidden;margin-top:9px;}
+.sessBar .fill{height:100%;border-radius:4px;width:0%;transition:width 1s cubic-bezier(.22,1,.36,1);}
+.goalGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;}
+.goalCard{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:14px;padding:16px;transition:.25s;display:flex;flex-direction:column;gap:10px;}
+.goalCard:hover{border-color:var(--accent);transform:translateY(-3px);box-shadow:0 10px 24px rgba(0,0,0,.3);}
+.goalHead{display:flex;align-items:center;gap:8px;}
+.goalIco{font-size:18px;}
+.goalTitle{font-size:12.5px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:var(--text);}
+.goalInputRow{display:flex;align-items:center;gap:8px;background:#0d1017;border:1px solid var(--border);border-radius:10px;padding:8px 12px;transition:.15s;}
+.goalInputRow:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px rgba(108,140,255,.15);}
+.goalInputRow span{color:var(--muted);font-weight:700;}
+.goalInputRow input{border:none;background:none;padding:0;font-size:16px;font-weight:800;color:var(--text);}
+.goalInputRow input:focus{outline:none;box-shadow:none;}
+.goalBar{height:8px;border-radius:5px;background:#1c212c;overflow:hidden;}
+.goalBar .fill{height:100%;border-radius:5px;width:0%;background:#f5b942;transition:width 1s cubic-bezier(.22,1,.36,1),background .3s;}
+.goalActualRow{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);}
+.goalPct{font-weight:800;color:var(--text);}
+.goalToggle{margin-top:2px;padding:10px;border-radius:10px;border:1px solid var(--border);background:#0d1017;color:var(--muted);font-size:12.5px;font-weight:700;cursor:pointer;transition:.2s;}
+.goalToggle:hover{border-color:var(--accent);color:var(--text);}
+.goalToggle.done{border-color:var(--mint);background:rgba(0,226,160,.12);color:var(--mint);}
+.goalCard.done{border-color:var(--mint);box-shadow:0 0 0 1px rgba(0,226,160,.25);}
+.goalNote{margin-top:18px;padding:14px 16px;border-radius:12px;background:rgba(108,140,255,.06);border:1px solid rgba(108,140,255,.3);font-size:12.5px;line-height:1.6;color:#dde3f0;animation:fadeUp .35s ease both;}
+.goalNote b{color:var(--text);}
+.mmChain{display:flex;flex-direction:column;gap:8px;margin-top:16px;}
+.mmChainRow{display:flex;gap:10px;align-items:flex-start;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:12.5px;line-height:1.5;color:#dde3f0;animation:fadeUp .35s ease both;transition:.2s;}
+.mmChainRow:hover{border-color:#f5b942;background:rgba(245,185,66,.06);}
+.mmChainNum{flex:none;width:20px;height:20px;border-radius:50%;background:rgba(245,185,66,.18);color:#f5b942;font-weight:800;font-size:11px;display:flex;align-items:center;justify-content:center;}
+.mmNote{margin-top:14px;padding:12px 14px;border-radius:12px;font-size:12.5px;line-height:1.5;animation:fadeUp .35s ease both;border:1px solid;}
+.mmNote.risky{background:rgba(255,90,110,.1);border-color:rgba(255,90,110,.4);color:#ffb3bb;}
+.mmNote.good{background:rgba(0,226,160,.1);border-color:rgba(0,226,160,.4);color:#8ffcd6;}
+.newsList{display:flex;flex-direction:column;gap:10px;}
+.newsCard{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:14px;padding:13px 15px;transition:.2s;animation:fadeUp .4s ease both;}
+.newsCard:hover{transform:translateX(4px);border-color:var(--accent);box-shadow:0 8px 20px rgba(0,0,0,.25);}
+.newsItem{display:flex;align-items:center;gap:12px;}
+.newsClickable{cursor:pointer;user-select:none;outline:none;}
+.newsClickable .collToggle{pointer-events:none;outline:none;}
+.newsCard .collapsible{padding-top:0;margin-top:0;}
+.newsCard{outline:none;border:1px solid transparent;}
+.newsCard.expanded{border-color:var(--accent);background:rgba(108,140,255,.05);}
+.newsIcon{font-size:20px;flex:none;}
+.newsBody{flex:1;min-width:0;}
+.newsTitle{font-size:13px;font-weight:700;}
+.newsDate{font-size:10.5px;color:var(--muted);margin-top:2px;}
+.newsRight{text-align:right;flex:none;}
+.newsCountdown{font-size:12px;font-weight:800;}
+.newsImpact{font-size:9.5px;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:.4px;}
+.newsImpactBox{margin-top:12px;padding-top:12px;border-top:1px dashed var(--border);display:grid;gap:8px;}
+.scenarioRow{display:flex;gap:10px;align-items:center;background:rgba(255,255,255,.025);border:1px solid var(--border);border-radius:10px;padding:8px 10px;transition:.2s;}
+.scenarioRow:hover{border-color:var(--accent);background:rgba(108,140,255,.06);transform:translateX(3px);}
+.scenarioTag{flex:none;font-weight:800;font-size:11px;padding:4px 9px;border-radius:8px;white-space:nowrap;min-width:100px;text-align:center;}
+.scenarioTag.up{background:rgba(0,226,160,.15);color:var(--mint);}
+.scenarioTag.down{background:rgba(255,90,110,.15);color:var(--coral);}
+.scenarioText{font-size:12px;color:#dde3f0;line-height:1.4;}
+.newsWhy{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.55;}
+.newsWhy b{color:var(--text);}
+.newsMetaRow{display:flex;gap:16px;margin-top:2px;font-size:10.5px;color:var(--muted);flex-wrap:wrap;}
+.newsMetaRow b{color:var(--text);font-weight:700;}
+.newsCurrBadge{font-size:9.5px;font-weight:800;padding:2px 8px;border-radius:8px;background:rgba(245,185,66,.15);color:#f5b942;letter-spacing:.3px;}
+.del{background:none;color:var(--coral);border:none;cursor:pointer;font-size:14px;transition:.15s;}
+.del:hover{transform:scale(1.2);}
+.viewBtn{background:none;color:var(--accent);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px;padding:3px 8px;transition:.15s;}
+.viewBtn:hover{border-color:var(--accent);background:rgba(108,140,255,.1);transform:translateY(-1px);}
+.empty{color:var(--muted);text-align:center;padding:22px;font-size:13px;}
+.aiBtn{background:linear-gradient(90deg,var(--accent),#a56cff);color:#fff;border:none;padding:13px 16px;border-radius:12px;font-weight:800;font-size:14.5px;cursor:pointer;width:100%;transition:.15s;}
+.aiBtn:hover{filter:brightness(1.1);transform:translateY(-1px);}
+.errBtn{background:linear-gradient(90deg,var(--coral),#c73a4e);animation:errGlow 2.5s ease-in-out infinite;}
+@keyframes errGlow{0%,100%{box-shadow:0 0 0 rgba(255,90,110,0)}50%{box-shadow:0 0 22px rgba(255,90,110,.45)}}
+.aiOut{white-space:pre-wrap;font-size:13.5px;line-height:1.65;margin-top:14px;color:#dde3f0;}
+.chartWrap{position:relative;height:220px;width:100%;}
+.chartWrap canvas{position:absolute;inset:0;width:100%!important;height:100%!important;}
+.calHead{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.calNav{display:flex;align-items:center;gap:10px;}
+.calNav button{background:#0d1017;border:1px solid var(--border);color:var(--text);border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:14px;transition:.15s;}
+.calNav button:hover{border-color:var(--accent);}
+.calMonth{font-weight:700;font-size:14px;min-width:130px;text-align:center;}
+.calPnl{font-weight:800;font-size:13px;}
+.calGrid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
+.calDow{text-align:center;font-size:10px;color:var(--muted);text-transform:uppercase;padding-bottom:4px;}
+.calCell{aspect-ratio:1;border-radius:9px;border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;transition:.15s;cursor:default;}
+.calCell:hover{transform:scale(1.08);z-index:2;}
+.calCell .d{color:var(--muted);font-size:9.5px;}
+.calCell .p{font-weight:800;font-size:10.5px;margin-top:1px;}
+.calCell.empty2{border:1px dashed var(--border);opacity:.35;}
+.legend{display:flex;gap:14px;margin-top:10px;font-size:10.5px;color:var(--muted);align-items:center;flex-wrap:wrap;}
+.legend i{width:10px;height:10px;border-radius:3px;display:inline-block;margin-right:5px;}
+/* animated pickers (pair + emotion) */
+.pairPicker{position:relative;}
+.pairBtn{display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;border:1px solid var(--border);border-radius:10px;background:#0d1017;color:var(--text);cursor:pointer;font-size:14px;transition:.2s;}
+.pairBtn:hover{border-color:var(--accent);}
+.pairBtn .chev{margin-left:auto;color:var(--muted);transition:transform .3s ease;}
+.pairPicker.open .pairBtn .chev{transform:rotate(180deg);}
+.pairIcon{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#04140f;flex:none;box-shadow:0 0 10px rgba(0,0,0,.3);}
+.pairIcon.emoji{background:#1c212c;font-size:14px;}
+.pairPanel{position:absolute;top:calc(100% + 8px);left:0;right:0;background:#12151d;border:1px solid var(--border);border-radius:14px;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;max-height:0;opacity:0;overflow:hidden;transition:max-height .3s ease, opacity .25s ease;z-index:12;box-shadow:0 16px 34px rgba(0,0,0,.45);}
+.pairPicker.open .pairPanel{max-height:260px;opacity:1;padding:8px;overflow-y:auto;}
+.pairOpt{display:flex;flex-direction:column;align-items:center;gap:5px;padding:9px 4px;border-radius:12px;cursor:pointer;transition:.18s;border:1px solid transparent;}
+.pairOpt:hover{background:rgba(255,255,255,.06);transform:translateY(-3px) scale(1.03);}
+.pairOpt.sel{border-color:var(--accent);background:rgba(108,140,255,.14);}
+.pairOpt .pairIcon{width:32px;height:32px;font-size:10px;}
+.pairOpt .lbl{font-size:9.5px;color:var(--text);text-align:center;}
+/* screenshots */
+.shotBox{position:relative;border:2px dashed var(--border);border-radius:12px;height:104px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;transition:.2s;background:#0d1017;}
+.shotBox:hover,.shotBox.hoverActive{border-color:var(--mint);background:rgba(0,226,160,.06);}
+.shotBox img{width:100%;height:100%;object-fit:cover;display:none;}
+.shotPh{color:var(--muted);font-size:11px;text-align:center;padding:0 8px;line-height:1.4;}
+.shotClear{position:absolute;top:4px;right:4px;background:rgba(0,0,0,.65);border:none;color:#fff;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:11px;display:none;z-index:2;}
+.shotNote{font-size:10.5px;color:var(--muted);margin:2px 0 10px;}
+/* toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(24px) scale(.95);background:linear-gradient(90deg,var(--mint),#00c48c);color:#04140f;font-weight:800;padding:13px 24px;border-radius:14px;box-shadow:0 12px 34px rgba(0,226,160,.35);opacity:0;pointer-events:none;transition:transform .4s cubic-bezier(.34,1.56,.64,1),opacity .3s;z-index:60;font-size:13.5px;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0) scale(1);}
+/* lightbox */
+.lightbox{position:fixed;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:50;padding:20px;}
+.lightbox.open{display:flex;animation:fadeIn .2s ease;}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.lbInner{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:18px;max-width:960px;width:100%;position:relative;animation:popIn .25s ease;max-height:90vh;overflow-y:auto;}
+@keyframes popIn{from{transform:scale(.92);opacity:0}to{transform:scale(1);opacity:1}}
+.lbClose{position:absolute;top:10px;right:10px;background:rgba(255,255,255,.08);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;z-index:2;}
+.lbGrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+@media(max-width:640px){.lbGrid{grid-template-columns:1fr}}
+.lbPane{text-align:center;}
+.lbLabel{font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:6px;letter-spacing:.5px;}
+.lbPane img{width:100%;border-radius:10px;border:1px solid var(--border);max-height:380px;object-fit:contain;background:#0d1017;}
+.lbInfo{margin-top:16px;padding-top:14px;border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;}
+.lbInfo .it{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;padding:9px;}
+.lbInfo .it b{display:block;font-size:14px;}
+.lbInfo .it span{color:var(--muted);font-size:10px;text-transform:uppercase;}
+.lbNotes{margin-top:10px;font-size:13px;color:#dde3f0;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;padding:10px;}
+.lbOverlaps{margin-top:10px;font-size:12.5px;color:var(--muted);}
+</style>
+</head>
+<body>
+<div class="blob blob1"></div><div class="blob blob2"></div>
+<div class="nav"><div class="brand"><div class="dot"></div>FX BINARY JOURNAL</div></div>
+<div class="tabBar">
+  <button class="tabBtn active" data-tab="stats"><span class="tabIco">📊</span>Обзор</button>
+  <button class="tabBtn" data-tab="news"><span class="tabIco">📰</span>Новости</button>
+  <button class="tabBtn" data-tab="risk"><span class="tabIco">💰</span>Риск-менеджмент</button>
+  <button class="tabBtn" data-tab="goal"><span class="tabIco">🎯</span>Цель</button>
+  <button class="tabBtn" data-tab="new"><span class="tabIco">✏️</span>Новая сделка</button>
+  <button class="tabBtn" data-tab="history"><span class="tabIco">📜</span>История</button>
+  <button class="tabBtn" data-tab="ai"><span class="tabIco">🤖</span>Аналитика</button>
+</div>
+
+<div class="wrap">
+
+<div class="tabPanel active" data-tab="stats">
+
+  <div class="card stats" id="stats"></div>
+
+  <div class="card">
+    <h2>Календарь торговли <button class="collToggle" id="calToggle">▾</button></h2>
+    <div class="collapsible calAlign" id="calBody">
+      <div class="calHead">
+        <div class="calNav"><button id="calPrev">‹</button><div class="calMonth" id="calMonthLabel"></div><button id="calNext">›</button></div>
+        <div class="calPnl" id="calMonthPnl"></div>
+      </div>
+      <div class="calGrid" id="calDow"></div>
+      <div class="calGrid" id="calGrid"></div>
+      <div class="legend"><i style="background:var(--mint)"></i>прибыльный день<i style="background:var(--coral);margin-left:10px"></i>убыточный день<i style="background:#2a3140;margin-left:10px"></i>без сделок</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Результат по дням недели <button class="collToggle" id="wdToggle">▾</button></h2>
+    <div class="collapsible" id="wdBody"><div class="chartWrap"><canvas id="weekdayChart"></canvas></div></div>
+  </div>
+
+  <div class="card">
+    <h2>Статистика по сессиям (время суток) <button class="collToggle" id="sessToggle">▾</button></h2>
+    <div class="collapsible" id="sessBody"><div class="sessGrid" id="sessionStats"></div></div>
+  </div>
+
+  <div class="card">
+    <h2>Винрейт по экспирации <button class="collToggle" id="expToggle">▾</button></h2>
+    <div class="collapsible" id="expBody"><div class="chartWrap"><canvas id="expiryChart"></canvas></div></div>
+  </div>
+
+  <div class="card">
+    <h2>🏆 Эталон vs 🚨 Ошибка <button class="collToggle" id="qualToggle">▾</button></h2>
+    <div class="collapsible" id="qualBody">
+      <div class="chartWrap"><canvas id="qualityChart"></canvas></div>
+      <div class="empty" id="qualityEmpty" style="display:none">Отмечай новые сделки как «Эталон» или «Слив/Ошибка» в форме ниже — здесь появится сравнение винрейта.</div>
+    </div>
+  </div>
+
+
+</div>
+
+<div class="tabPanel" data-tab="goal">
+
+  <div class="card">
+    <h2>🎯 Мои цели <span style="font-weight:400;text-transform:none;font-size:11px;color:var(--muted)">день · неделя · месяц</span></h2>
+    <div class="goalGrid">
+      <div class="goalCard" id="goalCard_day">
+        <div class="goalHead"><span class="goalIco">☀️</span><span class="goalTitle">Цель на день</span></div>
+        <div class="goalInputRow"><span>$</span><input type="number" step="any" id="goal_day_target" value="10"></div>
+        <div class="goalBar"><div class="fill" id="goal_day_fill" data-target="0"></div></div>
+        <div class="goalActualRow"><span id="goal_day_actual">Факт: +0.00</span><span class="goalPct" id="goal_day_pct">0%</span></div>
+        <button type="button" class="goalToggle" id="goal_day_toggle" data-key="day">Отметить выполненной</button>
+      </div>
+      <div class="goalCard" id="goalCard_week">
+        <div class="goalHead"><span class="goalIco">📆</span><span class="goalTitle">Цель на неделю</span></div>
+        <div class="goalInputRow"><span>$</span><input type="number" step="any" id="goal_week_target" value="50"></div>
+        <div class="goalBar"><div class="fill" id="goal_week_fill" data-target="0"></div></div>
+        <div class="goalActualRow"><span id="goal_week_actual">Факт: +0.00</span><span class="goalPct" id="goal_week_pct">0%</span></div>
+        <button type="button" class="goalToggle" id="goal_week_toggle" data-key="week">Отметить выполненной</button>
+      </div>
+      <div class="goalCard" id="goalCard_month">
+        <div class="goalHead"><span class="goalIco">🗓️</span><span class="goalTitle">Цель на месяц</span></div>
+        <div class="goalInputRow"><span>$</span><input type="number" step="any" id="goal_month_target" value="200"></div>
+        <div class="goalBar"><div class="fill" id="goal_month_fill" data-target="0"></div></div>
+        <div class="goalActualRow"><span id="goal_month_actual">Факт: +0.00</span><span class="goalPct" id="goal_month_pct">0%</span></div>
+        <button type="button" class="goalToggle" id="goal_month_toggle" data-key="month">Отметить выполненной</button>
+      </div>
+    </div>
+    <div class="goalNote" id="goalNote"></div>
+  </div>
+
+  <div class="card">
+    <h2>🎯 Винрейт-симулятор <button class="collToggle" id="simToggle">▾</button> <span style="font-weight:400;text-transform:none;font-size:11px;color:var(--muted)">калькулятор будущего</span></h2>
+    <div class="collapsible" id="simBody">
+    <div class="grid2">
+      <div><label>Депозит сейчас ($)</label><input type="number" step="any" id="sim_deposit" value="500"></div>
+      <div><label>Средняя ставка ($)</label><input type="number" step="any" id="sim_stake" value="10"></div>
+      <div><label>Винрейт (%)</label><input type="number" step="any" id="sim_winrate" value="60"></div>
+      <div><label>Выплата (%)</label><input type="number" step="any" id="sim_payout" value="80"></div>
+    </div>
+    <div class="chips">
+      <div class="chip" id="simAutoBtn" style="border-color:var(--accent);color:var(--accent);">📥 Взять статистику из дневника</div>
+    </div>
+    <button class="submit" id="simRunBtn" style="background:linear-gradient(90deg,var(--accent),#a56cff);color:#fff;">▶ Построить прогноз</button>
+    <div id="simResults" style="margin-top:18px;">
+      <div class="sessGrid">
+        <div class="sessTile"><div class="sessName">Через 50 сделок</div><div class="sessWr mint" id="sim0">—</div><div class="sessRow"><span>рост баланса</span><span id="simGrowth0">—</span></div></div>
+        <div class="sessTile"><div class="sessName">Через 200 сделок</div><div class="sessWr mint" id="sim1">—</div><div class="sessRow"><span>рост баланса</span><span id="simGrowth1">—</span></div></div>
+        <div class="sessTile"><div class="sessName">Через 500 сделок</div><div class="sessWr mint" id="sim2">—</div><div class="sessRow"><span>рост баланса</span><span id="simGrowth2">—</span></div></div>
+      </div>
+      <div class="chartWrap" style="margin-top:16px;"><canvas id="simChart"></canvas></div>
+      <div class="shotNote" style="margin-top:12px;">Это математическая проекция на основе твоего винрейта и риска на сделку (ставка ÷ депозит, применяется к растущему балансу — эффект сложного процента). Реальный рынок не гарантирует стабильный винрейт — это инструмент для мотивации и планирования, а не финансовая гарантия.</div>
+    </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="tabPanel" data-tab="news">
+
+  <div class="card">
+    <h2>📰 Важные новости <span style="font-weight:400;text-transform:none;font-size:11px;color:var(--muted)">нажми на новость — раскроется подробный разбор</span></h2>
+    <div id="newsList" class="newsList"></div>
+    <div class="shotNote" style="margin-top:8px;">Даты ФРС (FOMC), ЕЦБ, инфляции (CPI) и рынка труда США (NFP) — по данным federalreserve.gov, ecb.europa.eu и bls.gov. Разбор «куда пойдёт пара» — это объяснение типичной механики (как рынок обычно реагирует), а не гарантированный прогноз: реальное движение зависит от того, окажутся ли цифры лучше или хуже ожиданий рынка, и это невозможно знать заранее. Используй как обучающий материал, а не сигнал для входа в сделку.</div>
+  </div>
+
+</div>
+
+<div class="tabPanel" data-tab="risk">
+
+  <div class="card">
+    <h2>💰 Риск-менеджмент <span style="font-weight:400;text-transform:none;font-size:11px;color:var(--muted)">ставка и перекрытия по депозиту</span></h2>
+    <div class="grid2">
+      <div><label>Стартовый депозит ($)</label><input type="number" step="any" id="mm_deposit" value="200"></div>
+      <div><label>Выплата брокера (%)</label><input type="number" step="any" id="mm_payout" value="80"></div>
+    </div>
+    <button class="submit" id="mmRunBtn" style="background:linear-gradient(90deg,#f5b942,#e0943a);color:#2a1a00;">🧮 Рассчитать ставку и перекрытия</button>
+    <div id="mmResults" style="margin-top:18px;">
+      <div class="sessGrid">
+        <div class="sessTile"><div class="sessName">Базовая ставка · 1%</div><div class="sessWr mint" id="mm_base">—</div><div class="sessRow"><span>от депозита</span><span>&nbsp;</span></div></div>
+        <div class="sessTile"><div class="sessName">Перекрытие 1</div><div class="sessWr" id="mm_ov1" style="color:#f5b942">—</div><div class="sessRow"><span id="mm_ov1_note">если 1-я слита</span><span>&nbsp;</span></div></div>
+        <div class="sessTile"><div class="sessName">Перекрытие 2</div><div class="sessWr" id="mm_ov2" style="color:#f5b942">—</div><div class="sessRow"><span id="mm_ov2_note">если 2-я слита</span><span>&nbsp;</span></div></div>
+        <div class="sessTile"><div class="sessName">Перекрытие 3</div><div class="sessWr" id="mm_ov3" style="color:#f5b942">—</div><div class="sessRow"><span id="mm_ov3_note">если 3-я слита</span><span>&nbsp;</span></div></div>
+      </div>
+      <div id="mmChain" class="mmChain"></div>
+      <div id="mmRiskNote" class="mmNote" style="display:none;"></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="tabPanel" data-tab="new">
+
+  <div class="card" id="tradeFormCard">
+    <h2>Новая сделка</h2>
+    <div class="editBanner" id="editBanner">
+      <span>✏️ Редактирование сделки — измени поля и нажми «Сохранить изменения»</span>
+      <button type="button" id="cancelEditBtn">Отмена</button>
+    </div>
+    <div class="dirbtns">
+      <button type="button" class="dirbtn call active" id="btnCall">▲ CALL (вверх)</button>
+      <button type="button" class="dirbtn put" id="btnPut">▼ PUT (вниз)</button>
+    </div>
+    <div class="grid2">
+      <div><label>Пара</label>
+        <div class="pairPicker" id="pairPicker">
+          <button type="button" class="pairBtn" id="pairBtnEl"><span class="pairIcon" id="pairIconCur"></span><span id="pairCurText"></span><span class="chev">▾</span></button>
+          <div class="pairPanel" id="pairPanel"></div>
+        </div>
+      </div>
+      <div><label>Дата</label><input type="date" id="f_date"></div>
+      <div><label>Время</label><input type="time" id="f_time"></div>
+      <div><label>Ставка ($)</label><input type="number" step="any" id="f_stake" value="10"></div>
+      <div><label>Выплата (%)</label><input type="number" step="any" id="f_payout" value="80"></div>
+    </div>
+    <label>Экспирация</label>
+    <div class="chips" id="expChips">
+      <div class="chip active" data-v="1м">1м</div><div class="chip" data-v="2м">2м</div>
+      <div class="chip" data-v="3м">3м</div><div class="chip" data-v="4м">4м</div>
+      <div class="chip" data-v="5м">5м</div>
+    </div>
+    <label>Результат основной сделки</label>
+    <div class="resbtns">
+      <button type="button" class="resbtn win active" data-v="win">WIN</button>
+      <button type="button" class="resbtn loss" data-v="loss">LOSS</button>
+      <button type="button" class="resbtn draw" data-v="draw">DRAW</button>
+    </div>
+    <label>Качество сделки (по правилам твоей ТС)</label>
+    <div class="qualityBtns" id="qualityBtns">
+      <button type="button" class="resbtn win active" data-v="reference">🏆 Эталон</button>
+      <button type="button" class="resbtn loss" data-v="mistake">🚨 Слив / Ошибка</button>
+    </div>
+    <label>Перекрытия (докрытие сделки, максимум 3)</label>
+    <div class="chips" id="overlapChips">
+      <div class="chip active" data-v="0">Без перекрытий</div>
+      <div class="chip" data-v="1">1</div><div class="chip" data-v="2">2</div><div class="chip" data-v="3">3</div>
+    </div>
+    <div id="overlapRows"></div>
+    <div class="grid2">
+      <div><label>Состояние</label>
+        <div class="pairPicker" id="emoPicker">
+          <button type="button" class="pairBtn" id="emoBtnEl"><span class="pairIcon emoji" id="emoIconCur"></span><span id="emoCurText"></span><span class="chev">▾</span></button>
+          <div class="pairPanel" id="emoPanel"></div>
+        </div>
+      </div>
+    </div>
+    <label>Скриншоты сделки</label>
+    <div class="grid2">
+      <div>
+        <div class="shotBox" id="shotBoxBefore">
+          <input type="file" accept="image/*" id="f_imgBefore" hidden>
+          <div class="shotPh" id="shotPhBefore">📷 Скрин входа (до)<br>клик или наведи + Ctrl+V</div>
+          <img id="shotPrevBefore"><button type="button" class="shotClear" id="clearBefore">✕</button>
+        </div>
+      </div>
+      <div>
+        <div class="shotBox" id="shotBoxAfter">
+          <input type="file" accept="image/*" id="f_imgAfter" hidden>
+          <div class="shotPh" id="shotPhAfter">📷 Скрин результата (после)<br>клик или наведи + Ctrl+V</div>
+          <img id="shotPrevAfter"><button type="button" class="shotClear" id="clearAfter">✕</button>
+        </div>
+      </div>
+    </div>
+    <div class="shotNote">Скрины хранятся прямо в браузере. Наведи курсор на область и нажми Ctrl+V, чтобы вставить скриншот из буфера обмена.</div>
+    <label>Заметка / мой разбор графика (сетап, индикатор, почему вошёл)</label>
+    <textarea id="f_notes" placeholder="Например: отбой от уровня + RSI перекуплен"></textarea>
+    <button class="submit" id="addBtn">Записать сделку</button>
+  </div>
+
+</div>
+
+<div class="tabPanel" data-tab="history">
+
+  <div class="card tablewrap">
+    <h2>История сделок</h2>
+    <table>
+      <thead><tr><th>Дата</th><th>Время</th><th>Сессия</th><th>Пара</th><th>Напр.</th><th>Эксп.</th><th>Ставка</th><th>Перекр.</th><th>Рез.</th><th>Качество</th><th>P&L</th><th>Эмоция</th><th>Скрины</th><th></th></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div class="empty" id="emptyMsg" style="display:none">Пока нет сделок — запиши первую выше.</div>
+  </div>
+
+</div>
+
+<div class="tabPanel" data-tab="ai">
+
+  <div class="card">
+    <h2>🤖 AI-разбор</h2>
+    <button class="aiBtn" id="aiBtn">Получить подробный AI-разбор сделок</button>
+    <div class="aiOut" id="aiOut"></div>
+  </div>
+
+  <div class="card">
+    <h2>🎯 Разбор моих ошибок</h2>
+    <button class="aiBtn errBtn" id="errBtn">Показать только мои повторяющиеся ошибки</button>
+    <div class="aiOut" id="errOut"></div>
+  </div>
+
+</div>
+
+</div>
+
+<div class="toast" id="toast">✅ Сделка успешно записана</div>
+
+<div class="lightbox" id="lightbox">
+  <div class="lbInner">
+    <button class="lbClose" id="lbClose">✕</button>
+    <div class="lbGrid">
+      <div class="lbPane" id="lbPaneBefore"><div class="lbLabel">Вход (до)</div><img id="lbBefore"></div>
+      <div class="lbPane" id="lbPaneAfter"><div class="lbLabel">Результат (после)</div><img id="lbAfter"></div>
+    </div>
+    <div class="lbInfo" id="lbInfo"></div>
+    <div class="lbOverlaps" id="lbOverlaps"></div>
+    <div class="lbNotes" id="lbNotes" style="display:none"></div>
+  </div>
+</div>
+
+<script>
+const KEY='fxbo_trades_v4';
+let trades=[]; try{trades=JSON.parse(localStorage.getItem(KEY))||[];}catch(e){trades=[];}
+let weekChart, expiryChart, qualityChart, simChart, sampleFn=null;
+let curDir='call', curExp='1м', curRes='win', curQuality='reference', overlapCount=0;
+let editingId=null;
+let calDate=new Date();
+const DOW=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+const MONTHS=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+const PAIRS=['EUR/USD','GBP/USD','USD/JPY','USD/CHF','USD/CAD','AUD/USD','NZD/USD','EUR/JPY','GBP/JPY','EUR/GBP','AUD/JPY','CHF/JPY',
+  'EUR/CAD','EUR/AUD','EUR/CHF','EUR/NZD','GBP/CAD','GBP/CHF','GBP/AUD','GBP/NZD','AUD/CAD','AUD/CHF','AUD/NZD','CAD/JPY','NZD/JPY','CAD/CHF','USD/TRY','USD/ZAR','USD/MXN'];
+const EMOTIONS=[{l:'Спокойствие',i:'😌'},{l:'Уверенность',i:'😎'},{l:'Азарт/жадность',i:'🤑'},{l:'Месть за убыток',i:'😡'},{l:'Страх',i:'😨'},{l:'Скука/от нечего делать',i:'😐'},{l:'Сомнение',i:'🤔'}];
+const SESSIONS=[
+  {key:'asia', name:'Азия (флет)', short:'Азия', emoji:'🌙', start:0, end:12},
+  {key:'eu', name:'Европа (открытие)', short:'Европа', emoji:'🇪🇺', start:12, end:16},
+  {key:'euus', name:'Европа/США (перекрытие)', short:'EU/US', emoji:'🔥', start:16, end:20},
+  {key:'us', name:'США (вечер)', short:'США', emoji:'🇺🇸', start:20, end:24}
+];
+function fmtHour(h){ return String(h%24).padStart(2,'0')+':00'; }
+SESSIONS.forEach(s=>{ s.range=fmtHour(s.start)+'–'+fmtHour(s.end); });
+function sessionFor(time){
+  if(!time) return SESSIONS[0];
+  const h=parseInt(time.split(':')[0],10);
+  if(h>=0 && h<12) return SESSIONS[0];
+  if(h>=12 && h<16) return SESSIONS[1];
+  if(h>=16 && h<20) return SESSIONS[2];
+  return SESSIONS[3];
+}
+let curPair='EUR/USD', curEmotion=EMOTIONS[0].l;
+let imgBeforeData=null, imgAfterData=null, hoveredShot=null;
+
+function save(){ try{ localStorage.setItem(KEY,JSON.stringify(trades)); }catch(e){ alert('Не удалось сохранить сделку — в браузере закончилось место (обычно из-за скринов). Удали несколько старых сделок со скринами.'); } }
+function ovPnl(o,payout){ return o.result==='win'? o.stake*payout/100 : (o.result==='loss'? -o.stake:0); }
+function pnl(t){
+  let p = t.result==='win'? t.stake*t.payout/100 : (t.result==='loss'? -t.stake:0);
+  (t.overlaps||[]).forEach(o=>{ p+=ovPnl(o,t.payout); });
+  return p;
+}
+function fmt(n){ return (n>=0?'+':'')+n.toLocaleString('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function hueFor(str){ let h=0; for(const c of str) h=(h*31+c.charCodeAt(0))%360; return h; }
+function iconBg(p){ const h=hueFor(p); return `linear-gradient(135deg,hsl(${h},80%,55%),hsl(${(h+40)%360},80%,40%))`; }
+function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(window._tt); window._tt=setTimeout(()=>t.classList.remove('show'),2400); }
+
+function animateNum(el,to,prefix,decimals){
+  const from=parseFloat(el.dataset.val||'0'); const dur=600,t0=performance.now();
+  function step(t){ const p=Math.min(1,(t-t0)/dur); const val=from+(to-from)*(1-Math.pow(1-p,3));
+    el.textContent=prefix+val.toLocaleString('ru-RU',{minimumFractionDigits:decimals,maximumFractionDigits:decimals});
+    if(p<1) requestAnimationFrame(step); else el.dataset.val=to; }
+  requestAnimationFrame(step);
+}
+
+/* stagger card entrance, scoped per tab panel so switching tabs replays it cleanly */
+function playCardStagger(panel){
+  if(!panel) return;
+  const cards=panel.querySelectorAll(':scope > .card');
+  cards.forEach((c,i)=>{
+    c.style.animation='none';
+    void c.offsetHeight;
+    c.style.animation='';
+    c.style.animationDelay=(i*0.07)+'s';
+  });
+}
+playCardStagger(document.querySelector('.tabPanel.active'));
+
+/* direction / expiry / result */
+document.getElementById('btnCall').onclick=()=>setDir('call');
+document.getElementById('btnPut').onclick=()=>setDir('put');
+function setDir(d){curDir=d;document.getElementById('btnCall').classList.toggle('active',d==='call');document.getElementById('btnPut').classList.toggle('active',d==='put');}
+document.querySelectorAll('#expChips .chip').forEach(c=>c.onclick=()=>{document.querySelectorAll('#expChips .chip').forEach(x=>x.classList.remove('active'));c.classList.add('active');curExp=c.dataset.v;});
+document.querySelectorAll('.resbtns:not(.ov_res) .resbtn').forEach(b=>{ if(!b.closest('#overlapRows')) b.onclick=()=>{ document.querySelectorAll('.resbtns:not(.ov_res) .resbtn').forEach(x=>{ if(!x.closest('#overlapRows')) x.classList.remove('active'); }); b.classList.add('active'); curRes=b.dataset.v; }; });
+document.querySelectorAll('#qualityBtns .resbtn').forEach(b=>b.onclick=()=>{ document.querySelectorAll('#qualityBtns .resbtn').forEach(x=>x.classList.remove('active')); b.classList.add('active'); curQuality=b.dataset.v; });
+
+/* overlaps */
+document.querySelectorAll('#overlapChips .chip').forEach(c=>c.onclick=()=>{
+  document.querySelectorAll('#overlapChips .chip').forEach(x=>x.classList.remove('active'));
+  c.classList.add('active'); overlapCount=parseInt(c.dataset.v); renderOverlapRows();
+});
+function renderOverlapRows(){
+  const wrap=document.getElementById('overlapRows'); wrap.innerHTML='';
+  for(let i=0;i<overlapCount;i++){
+    const row=document.createElement('div'); row.className='overlapRow';
+    row.innerHTML=`<div><label>Перекрытие ${i+1} · ставка ($)</label><input type="number" step="any" class="ov_stake" value="10"></div>
+      <div class="resbtns ov_res">
+        <button type="button" class="resbtn win active" data-v="win">WIN</button>
+        <button type="button" class="resbtn loss" data-v="loss">LOSS</button>
+        <button type="button" class="resbtn draw" data-v="draw">DRAW</button>
+      </div>`;
+    wrap.appendChild(row);
+  }
+  wrap.querySelectorAll('.ov_res').forEach(group=>{
+    group.querySelectorAll('.resbtn').forEach(b=>b.onclick=()=>{ group.querySelectorAll('.resbtn').forEach(x=>x.classList.remove('active')); b.classList.add('active'); });
+  });
+}
+
+/* collapsibles */
+function toggleCollapsible(body,btn){
+  if(body._toggleEnd){ body.removeEventListener('transitionend', body._toggleEnd); body._toggleEnd=null; }
+  const isClosed=body.classList.contains('closed');
+  if(isClosed){
+    body.classList.remove('closed'); if(btn) btn.classList.remove('closed');
+    body.style.overflow='hidden';
+    const target=body.scrollHeight;
+    body.style.maxHeight=target+'px';
+    body.style.opacity='1';
+    const onEnd=(e)=>{
+      if(e.propertyName==='max-height'){
+        body.removeEventListener('transitionend', onEnd); body._toggleEnd=null;
+        if(!body.classList.contains('closed')){ body.style.maxHeight='none'; body.style.overflow='visible'; }
+      }
+    };
+    body._toggleEnd=onEnd;
+    body.addEventListener('transitionend', onEnd);
+  } else {
+    const current=(!body.style.maxHeight||body.style.maxHeight==='none')?body.scrollHeight:parseFloat(body.style.maxHeight);
+    body.style.overflow='hidden';
+    body.style.maxHeight=current+'px';
+    void body.offsetHeight;
+    requestAnimationFrame(()=>{
+      body.style.maxHeight='0px';
+      body.style.opacity='0';
+      body.classList.add('closed'); if(btn) btn.classList.add('closed');
+    });
+  }
+}
+function bindToggle(btnId,bodyId){
+  const btn=document.getElementById(btnId), body=document.getElementById(bodyId);
+  btn.onclick=()=>toggleCollapsible(body,btn);
+}
+/* tabs */
+function switchTab(name){
+  document.querySelectorAll('.tabBtn').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
+  document.querySelectorAll('.tabPanel').forEach(p=>p.classList.toggle('active', p.dataset.tab===name));
+  const panel=document.querySelector('.tabPanel[data-tab="'+name+'"]');
+  playCardStagger(panel);
+  if(name==='stats'){
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      [weekChart,expiryChart,qualityChart].forEach(c=>{ if(c) c.resize(); });
+    }));
+  }
+  if(name==='goal'){
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      if(simChart) simChart.resize();
+      renderGoals();
+    }));
+  }
+}
+document.querySelectorAll('.tabBtn').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
+
+bindToggle('calToggle','calBody');
+bindToggle('wdToggle','wdBody'); bindToggle('sessToggle','sessBody'); bindToggle('expToggle','expBody');
+bindToggle('qualToggle','qualBody'); bindToggle('simToggle','simBody');
+
+/* pair picker */
+const pairPicker=document.getElementById('pairPicker'), pairPanel=document.getElementById('pairPanel');
+function renderPairPanel(){
+  pairPanel.innerHTML='';
+  PAIRS.forEach(p=>{
+    const opt=document.createElement('div'); opt.className='pairOpt'+(p===curPair?' sel':'');
+    opt.innerHTML=`<div class="pairIcon" style="background:${iconBg(p)}">${p.split('/')[0].slice(0,2)}</div><span class="lbl">${p}</span>`;
+    opt.onclick=()=>{ curPair=p; updatePairBtn(); pairPicker.classList.remove('open'); };
+    pairPanel.appendChild(opt);
+  });
+}
+function updatePairBtn(){
+  document.getElementById('pairIconCur').style.background=iconBg(curPair);
+  document.getElementById('pairIconCur').textContent=curPair.split('/')[0].slice(0,2);
+  document.getElementById('pairCurText').textContent=curPair;
+  renderPairPanel();
+}
+document.getElementById('pairBtnEl').onclick=(e)=>{ e.stopPropagation(); pairPicker.classList.toggle('open'); emoPicker.classList.remove('open'); };
+updatePairBtn();
+
+/* emotion picker */
+const emoPicker=document.getElementById('emoPicker'), emoPanel=document.getElementById('emoPanel');
+function renderEmoPanel(){
+  emoPanel.innerHTML='';
+  EMOTIONS.forEach(e=>{
+    const opt=document.createElement('div'); opt.className='pairOpt'+(e.l===curEmotion?' sel':'');
+    opt.innerHTML=`<div class="pairIcon emoji">${e.i}</div><span class="lbl">${e.l}</span>`;
+    opt.onclick=()=>{ curEmotion=e.l; updateEmoBtn(); emoPicker.classList.remove('open'); };
+    emoPanel.appendChild(opt);
+  });
+}
+function updateEmoBtn(){
+  const cur=EMOTIONS.find(e=>e.l===curEmotion);
+  document.getElementById('emoIconCur').textContent=cur.i;
+  document.getElementById('emoCurText').textContent=cur.l;
+  renderEmoPanel();
+}
+document.getElementById('emoBtnEl').onclick=(e)=>{ e.stopPropagation(); emoPicker.classList.toggle('open'); pairPicker.classList.remove('open'); };
+updateEmoBtn();
+document.addEventListener('click',(e)=>{ if(!pairPicker.contains(e.target)) pairPicker.classList.remove('open'); if(!emoPicker.contains(e.target)) emoPicker.classList.remove('open'); });
+
+/* screenshots + ctrl+v paste */
+function resizeImage(fileOrBlob,maxW,quality){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const img=new Image();
+      img.onload=()=>{
+        const scale=Math.min(1,maxW/img.width); const w=img.width*scale,h=img.height*scale;
+        const c=document.createElement('canvas'); c.width=w; c.height=h;
+        c.getContext('2d').drawImage(img,0,0,w,h);
+        resolve(c.toDataURL('image/jpeg',quality));
+      };
+      img.onerror=reject; img.src=e.target.result;
+    };
+    reader.onerror=reject; reader.readAsDataURL(fileOrBlob);
+  });
+}
+function showShotPreview(key,url){
+  document.getElementById('shotPrev'+key).src=url; document.getElementById('shotPrev'+key).style.display='block';
+  document.getElementById('shotPh'+key).style.display='none'; document.getElementById('clear'+key).style.display='block';
+}
+function setupShot(boxId,inputId,phId,prevId,clearId,key,setter){
+  const box=document.getElementById(boxId), input=document.getElementById(inputId), clearBtn=document.getElementById(clearId);
+  box.onclick=()=>input.click();
+  box.addEventListener('mouseenter',()=>{ hoveredShot=key; box.classList.add('hoverActive'); });
+  box.addEventListener('mouseleave',()=>{ if(hoveredShot===key) hoveredShot=null; box.classList.remove('hoverActive'); });
+  input.onchange=async ()=>{ const f=input.files[0]; if(!f) return; const url=await resizeImage(f,480,0.72); setter(url); showShotPreview(key,url); };
+  clearBtn.onclick=(e)=>{ e.stopPropagation(); setter(null); input.value='';
+    document.getElementById(prevId).style.display='none'; document.getElementById(phId).style.display='flex'; clearBtn.style.display='none'; };
+}
+setupShot('shotBoxBefore','f_imgBefore','shotPhBefore','shotPrevBefore','clearBefore','Before',v=>imgBeforeData=v);
+setupShot('shotBoxAfter','f_imgAfter','shotPhAfter','shotPrevAfter','clearAfter','After',v=>imgAfterData=v);
+document.addEventListener('paste', async (e)=>{
+  if(!hoveredShot) return;
+  const items=(e.clipboardData||window.clipboardData).items;
+  for(const item of items){
+    if(item.type.indexOf('image')!==-1){
+      const blob=item.getAsFile(); const url=await resizeImage(blob,480,0.72);
+      if(hoveredShot==='Before'){ imgBeforeData=url; } else { imgAfterData=url; }
+      showShotPreview(hoveredShot,url); e.preventDefault(); break;
+    }
+  }
+});
+function resetShots(){
+  imgBeforeData=null; imgAfterData=null;
+  ['Before','After'].forEach(k=>{
+    document.getElementById('shotPrev'+k).style.display='none';
+    document.getElementById('shotPh'+k).style.display='flex';
+    document.getElementById('clear'+k).style.display='none';
+    document.getElementById('f_img'+k).value='';
+  });
+}
+
+/* lightbox */
+function openLightbox(t){
+  const bp=document.getElementById('lbPaneBefore'), ap=document.getElementById('lbPaneAfter');
+  if(t.imgBefore){ document.getElementById('lbBefore').src=t.imgBefore; bp.style.display='block'; } else bp.style.display='none';
+  if(t.imgAfter){ document.getElementById('lbAfter').src=t.imgAfter; ap.style.display='block'; } else ap.style.display='none';
+  const p=pnl(t);
+  const info=[['Пара',t.pair],['Направление',t.direction==='call'?'▲ CALL':'▼ PUT'],['Дата',t.date],['Время',t.time||'—'],
+    ['День недели',DOW[weekdayIdx(t.date)]],['Экспирация',t.expiry],['Ставка','$'+t.stake],['Выплата',t.payout+'%'],
+    ['Сессия',sessionFor(t.time).emoji+' '+sessionFor(t.time).short],
+    ['Качество',t.quality==='mistake'?'🚨 Ошибка':(t.quality==='reference'?'🏆 Эталон':'—')],
+    ['Результат',t.result.toUpperCase()],['Итог P&L',fmt(p)+'$'],['Состояние',t.emotion]];
+  document.getElementById('lbInfo').innerHTML=info.map(([l,v])=>`<div class="it"><b class="${l==='Итог P&L'?(p>=0?'mint':'coral'):''}">${v}</b><span>${l}</span></div>`).join('');
+  const ovWrap=document.getElementById('lbOverlaps');
+  if(t.overlaps && t.overlaps.length){
+    ovWrap.innerHTML='<b>Перекрытия (' + t.overlaps.length + '):</b> ' + t.overlaps.map((o,i)=>`#${i+1} $${o.stake} — ${o.result.toUpperCase()}`).join(' · ');
+  } else { ovWrap.innerHTML=''; }
+  const notesEl=document.getElementById('lbNotes');
+  if(t.notes){ notesEl.style.display='block'; notesEl.textContent='Мой разбор графика: '+t.notes; } else notesEl.style.display='none';
+  document.getElementById('lightbox').classList.add('open');
+}
+document.getElementById('lbClose').onclick=()=>document.getElementById('lightbox').classList.remove('open');
+document.getElementById('lightbox').onclick=(e)=>{ if(e.target.id==='lightbox') e.currentTarget.classList.remove('open'); };
+
+function weekdayIdx(dateStr){ const d=new Date(dateStr+'T00:00:00'); return (d.getDay()+6)%7; }
+
+function render(){
+  const tbody=document.getElementById('tbody'); tbody.innerHTML='';
+  const sorted=[...trades].sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
+  document.getElementById('emptyMsg').style.display=trades.length?'none':'block';
+  sorted.forEach(t=>{
+    const p=pnl(t); const hasImg=t.imgBefore||t.imgAfter; const ovCount=(t.overlaps||[]).length;
+    const tr=document.createElement('tr');
+    const sess=sessionFor(t.time);
+    tr.innerHTML=`<td>${t.date}</td><td>${t.time||''}</td><td><span class="badge sess">${sess.emoji} ${sess.short}</span></td><td>${t.pair}</td><td>${t.direction==='call'?'▲ CALL':'▼ PUT'}</td>
+      <td>${t.expiry}</td><td>$${t.stake}</td>
+      <td>${ovCount?`<span class="badge ov">${ovCount}×</span>`:'—'}</td>
+      <td><span class="badge ${t.result}">${t.result.toUpperCase()}</span></td>
+      <td>${t.quality==='mistake'?'<span class="badge loss">🚨 Ошибка</span>':(t.quality==='reference'?'<span class="badge win">🏆 Эталон</span>':'—')}</td>
+      <td class="${p>=0?'mint':'coral'}">${fmt(p)}</td>
+      <td>${t.emotion}</td>
+      <td>${hasImg?`<button class="viewBtn" data-view="${t.id}">👁 смотреть</button>`:'—'}</td>
+      <td><button class="editBtn" data-edit="${t.id}">✏️</button><button class="del" data-id="${t.id}">✕</button></td>`;
+    tbody.appendChild(tr);
+  });
+  document.querySelectorAll('.del').forEach(b=>b.onclick=()=>{ if(editingId===b.dataset.id) cancelEdit(); trades=trades.filter(t=>t.id!==b.dataset.id);save();render();});
+  document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{ const t=trades.find(x=>x.id===b.dataset.edit); if(t) startEdit(t); });
+  document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{ const t=trades.find(x=>x.id===b.dataset.view); if(t) openLightbox(t); });
+  renderStats(sorted); renderWeekday(sorted); renderCalendar(sorted); renderSessions(sorted); renderExpiry(sorted); renderQuality(sorted); renderGoals();
+}
+
+function renderStats(sorted){
+  const total=sorted.length;
+  const pnls=sorted.map(pnl);
+  const sum=pnls.reduce((a,b)=>a+b,0);
+  const wins=sorted.filter(t=>t.result==='win').length;
+  const winRate=total?(wins/total*100):0;
+  let streak=0,lastRes=null;
+  for(let i=sorted.length-1;i>=0;i--){ if(sorted[i].result==='draw') continue; if(lastRes===null) lastRes=sorted[i].result; if(sorted[i].result===lastRes) streak++; else break; }
+  const byPair={}; sorted.forEach(t=>{ byPair[t.pair]=(byPair[t.pair]||0)+pnl(t); });
+  let bestPair='—', bestVal=-Infinity;
+  Object.entries(byPair).forEach(([k,v])=>{ if(v>bestVal){bestVal=v;bestPair=k;} });
+  const box=document.getElementById('stats');
+  box.innerHTML=['Сделок','Профит','Винрейт','Серия','Лучшая пара'].map((l,i)=>`<div class="stat"><b id="st${i}"></b><span>${l}</span></div>`).join('');
+  animateNum(document.getElementById('st0'),total,'',0);
+  const st1=document.getElementById('st1'); st1.className=sum>=0?'mint':'coral'; st1.textContent=(sum>=0?'+$':'-$')+Math.abs(sum).toFixed(2);
+  document.getElementById('st2').textContent=winRate.toFixed(1)+'%';
+  document.getElementById('st3').textContent=(lastRes==='win'?'🔥 ':lastRes==='loss'?'❄️ ':'— ')+streak;
+  document.getElementById('st4').textContent=bestPair;
+}
+
+function renderWeekday(sorted){
+  const buckets=Array.from({length:7},()=>({sum:0,count:0}));
+  sorted.forEach(t=>{ const i=weekdayIdx(t.date); buckets[i].sum+=pnl(t); buckets[i].count++; });
+  const data=buckets.map(b=>b.sum); const colors=data.map(v=>v>=0?'#00e2a0':'#ff5a6e');
+  const ctx=document.getElementById('weekdayChart'); if(weekChart) weekChart.destroy();
+  weekChart=new Chart(ctx,{type:'bar',data:{labels:DOW,datasets:[{label:'P&L',data,backgroundColor:colors,borderRadius:6}]},
+    options:{animation:{duration:700},responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{afterLabel:(c)=>buckets[c.dataIndex].count+' сделок'}}},scales:{x:{ticks:{color:'#727d92'},grid:{display:false}},y:{ticks:{color:'#727d92'},grid:{color:'#232733'}}}}});
+}
+
+function wrColor(wr){ return wr>=55?'var(--mint)':(wr<45?'var(--coral)':'#f5b942'); }
+
+function renderSessions(sorted){
+  const box=document.getElementById('sessionStats');
+  const buckets={}; SESSIONS.forEach(s=>buckets[s.key]={count:0,wins:0,sum:0});
+  sorted.forEach(t=>{ const s=sessionFor(t.time); const b=buckets[s.key]; b.count++; if(t.result==='win') b.wins++; b.sum+=pnl(t); });
+  box.innerHTML=SESSIONS.map(s=>{
+    const b=buckets[s.key]; const wr=b.count?(b.wins/b.count*100):0; const col=wrColor(wr);
+    return `<div class="sessTile">
+      <div class="sessHead"><span class="sessEmoji">${s.emoji}</span><span class="sessName">${s.name}</span></div>
+      <div class="sessTime">${s.range} <span class="sessTimeMsk">МСК</span></div>
+      <div class="sessWr" style="color:${col}">${b.count?wr.toFixed(0)+'%':'—'}</div>
+      <div class="sessRow"><span>${b.count} сделок</span><span class="${b.sum>=0?'mint':'coral'}">${fmt(b.sum)}</span></div>
+      <div class="sessBar"><div class="fill" data-target="${wr}" style="background:${col}"></div></div>
+    </div>`;
+  }).join('');
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    box.querySelectorAll('.fill').forEach(el=>{ el.style.width=el.dataset.target+'%'; });
+  }));
+}
+
+function renderExpiry(sorted){
+  const exps=['1м','2м','3м','4м','5м'];
+  const buckets=exps.map(()=>({count:0,wins:0}));
+  sorted.forEach(t=>{ const i=exps.indexOf(t.expiry); if(i===-1) return; buckets[i].count++; if(t.result==='win') buckets[i].wins++; });
+  const data=buckets.map(b=>b.count?+(b.wins/b.count*100).toFixed(1):0);
+  const colors=data.map(wr=>wrColor(wr).replace('var(--mint)','#00e2a0').replace('var(--coral)','#ff5a6e'));
+  const ctx=document.getElementById('expiryChart'); if(expiryChart) expiryChart.destroy();
+  expiryChart=new Chart(ctx,{type:'bar',data:{labels:exps,datasets:[{label:'Винрейт %',data,backgroundColor:colors,borderRadius:6}]},
+    options:{animation:{duration:800,easing:'easeOutCubic'},responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:(c)=>c.parsed.y+'% винрейт',afterLabel:(c)=>buckets[c.dataIndex].count+' сделок'}}},
+      scales:{x:{ticks:{color:'#727d92'},grid:{display:false}},y:{min:0,max:100,ticks:{color:'#727d92',callback:v=>v+'%'},grid:{color:'#232733'}}}}});
+}
+
+const NEWS_EVENTS=[
+  {icon:'💼',title:'NFP — рынок труда США (за сентябрь)',date:'2026-10-02',impact:'Высокая',curr:'USD',
+    up:'Рабочих мест создано БОЛЬШЕ прогноза',down:'Рабочих мест создано МЕНЬШЕ прогноза',
+    why:'Крепкий рынок труда — значит экономика США сильна, и ФРС может дольше держать высокую ставку. Это привлекает капитал в доллар, и он растёт (EUR/USD падает). Слабые данные говорят об обратном.',
+    move:'Одна из самых резких реакций рынка — движение 0.3–1% за первые 15–30 минут',
+    longterm:'Несколько плохих отчётов подряд обычно и запускают смену тренда на недели вперёд'},
+  {icon:'📊',title:'CPI США (инфляция за сентябрь)',date:'2026-10-14',impact:'Высокая',curr:'USD',
+    up:'Инфляция ВЫШЕ прогноза',down:'Инфляция НИЖЕ прогноза',
+    why:'Высокая инфляция означает, что ФРС, скорее всего, будет держать ставку высокой дольше (или даже повышать) — доллар растёт. Низкая инфляция открывает дорогу к снижению ставки — доллар слабеет.',
+    move:'Обычно 0.3–0.7% в течение часа после выхода данных',
+    longterm:'Одно из ключевых данных для решений ФРС — задаёт настроение рынку на весь месяц'},
+  {icon:'🏦',title:'FOMC — решение по ставке ФРС США',date:'2026-10-28',impact:'Высокая',curr:'USD',
+    up:'Ставку повышают или тон жёсткий (намёк на новые повышения)',down:'Ставку снижают или тон мягкий',
+    why:'Более высокая ставка в США делает доллар выгоднее для инвесторов (выше доходность по вкладам и облигациям) — доллар растёт. Мягкая политика — наоборот, доллар слабеет.',
+    move:'Самая сильная волатильность дня — часто 0.5–1.5%, особенно во время пресс-конференции главы ФРС',
+    longterm:'Задаёт тренд на месяцы вперёд — один из главных факторов силы доллара вообще'},
+  {icon:'🇪🇺',title:'ЕЦБ — решение по ставке для евро',date:'2026-10-29',impact:'Высокая',curr:'EUR',
+    up:'Ставку повышают или намёк на дальнейшее ужесточение',down:'Ставку снижают или тон мягкий',
+    why:'Та же логика, только для евро: чем выше ставка в еврозоне — тем евро привлекательнее для инвесторов, и он растёт против доллара. Мягкая политика ЕЦБ ослабляет евро.',
+    move:'0.4–1% в течение часа, особенно на пресс-конференции главы ЕЦБ',
+    longterm:'ЕЦБ обычно двигается медленнее ФРС, эффект более плавный, но задаёт направление на месяцы'},
+  {icon:'📊',title:'CPI США (инфляция за октябрь)',date:'2026-11-10',impact:'Высокая',curr:'USD',
+    up:'Инфляция ВЫШЕ прогноза',down:'Инфляция НИЖЕ прогноза',
+    why:'Так же, как и с сентябрьским отчётом: высокая инфляция — доллар крепче, низкая — доллар слабее.',
+    move:'Обычно 0.3–0.7% в течение часа после выхода данных',
+    longterm:'Одно из ключевых данных для решений ФРС'},
+  {icon:'💼',title:'NFP — рынок труда США (за октябрь)',date:'2026-11-06',impact:'Высокая',curr:'USD',
+    up:'Рабочих мест создано БОЛЬШЕ прогноза',down:'Рабочих мест создано МЕНЬШЕ прогноза',
+    why:'Крепкий рынок труда — доллар растёт, слабый — доллар слабеет (та же логика, что и в сентябрьском отчёте).',
+    move:'Движение 0.3–1% за первые 15–30 минут',
+    longterm:'Несколько отчётов подряд в одну сторону обычно и меняют тренд'},
+  {icon:'📈',title:'Еврозона — предварительная инфляция (CPI)',date:'2026-10-31',impact:'Средняя',curr:'EUR',
+    up:'Инфляция в еврозоне ВЫШЕ прогноза',down:'Инфляция НИЖЕ прогноза',
+    why:'Высокая инфляция повышает шанс, что ЕЦБ будет держать ставку высокой дольше — евро растёт. Низкая — наоборот, ЕЦБ может смягчить политику, евро слабеет.',
+    move:'Реакция мягче, чем на американские данные — обычно 0.2–0.5%',
+    longterm:'Влияет на ожидания рынка по следующему заседанию ЕЦБ'},
+  {icon:'🏦',title:'FOMC — решение по ставке ФРС США',date:'2026-12-09',impact:'Высокая',curr:'USD',
+    up:'Ставку повышают или тон жёсткий',down:'Ставку снижают или тон мягкий',
+    why:'Такая же логика, что и в октябре: жёсткая политика ФРС — доллар крепче, мягкая — слабее.',
+    move:'Часто 0.5–1.5%, особенно на пресс-конференции',
+    longterm:'Один из главных факторов силы доллара на месяцы вперёд'},
+  {icon:'📊',title:'CPI США (инфляция за ноябрь)',date:'2026-12-10',impact:'Высокая',curr:'USD',
+    up:'Инфляция ВЫШЕ прогноза',down:'Инфляция НИЖЕ прогноза',
+    why:'Высокая инфляция — доллар крепче, низкая — доллар слабее.',
+    move:'Обычно 0.3–0.7% в течение часа',
+    longterm:'Ключевые данные для решений ФРС'},
+  {icon:'🇪🇺',title:'ЕЦБ — решение по ставке для евро',date:'2026-12-17',impact:'Высокая',curr:'EUR',
+    up:'Ставку повышают или тон жёсткий',down:'Ставку снижают или тон мягкий',
+    why:'Жёсткая политика ЕЦБ — евро крепче, мягкая — слабее.',
+    move:'0.4–1% в течение часа, особенно на пресс-конференции',
+    longterm:'Задаёт направление евро на месяцы вперёд'}
+];
+function renderNews(){
+  const box=document.getElementById('newsList');
+  const now=new Date();
+  const upcoming=NEWS_EVENTS.map(e=>({...e,d:new Date(e.date+'T12:00:00')})).filter(e=>e.d>=new Date(now.toDateString())).sort((a,b)=>a.d-b.d).slice(0,8);
+  if(!upcoming.length){ box.innerHTML='<div class="empty">Ближайших крупных событий не найдено.</div>'; return; }
+  box.innerHTML=upcoming.map((e,i)=>{
+    const days=Math.round((e.d-now)/(1000*60*60*24));
+    const label=days<=0?'Сегодня':(days===1?'Завтра':'через '+days+' дн.');
+    const col=days<=1?'coral':(days<=5?'#f5b942':'mint');
+    const isUsd=e.curr==='USD';
+    const upEffect=isUsd?'EUR/USD ⬇':'EUR/USD ⬆';
+    const downEffect=isUsd?'EUR/USD ⬆':'EUR/USD ⬇';
+    const upTagClass=upEffect.includes('⬆')?'up':'down';
+    const downTagClass=downEffect.includes('⬆')?'up':'down';
+    return `<div class="newsCard" style="animation-delay:${i*0.06}s">
+      <div class="newsItem newsClickable" data-newshead="${i}">
+        <div class="newsIcon">${e.icon}</div>
+        <div class="newsBody"><div class="newsTitle">${e.title}</div><div class="newsDate">${e.d.toLocaleDateString('ru-RU',{day:'2-digit',month:'long',year:'numeric'})}</div></div>
+        <div class="newsRight"><div class="newsCountdown ${col==='mint'||col==='coral'?col:''}" style="${col==='#f5b942'?'color:#f5b942':''}">${label}</div><div class="newsImpact">${e.impact} важность</div></div>
+        <button type="button" class="collToggle closed" id="newsChev${i}" tabindex="-1">▾</button>
+      </div>
+      <div class="collapsible closed" id="newsDetail${i}">
+        <div class="newsImpactBox">
+          <div class="scenarioRow"><span class="scenarioTag ${upTagClass}">${upEffect}</span><span class="scenarioText"><b>Если:</b> ${e.up} → пара уходит ${upTagClass==='up'?'вверх':'вниз'}</span></div>
+          <div class="scenarioRow"><span class="scenarioTag ${downTagClass}">${downEffect}</span><span class="scenarioText"><b>Если:</b> ${e.down} → пара уходит ${downTagClass==='up'?'вверх':'вниз'}</span></div>
+          <div class="newsWhy">${e.why}</div>
+          <div class="newsMetaRow"><span><b>Типичное движение:</b> ${e.move}</span></div>
+          <div class="newsMetaRow"><span><b>Долгосрочно:</b> ${e.longterm}</span></div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  upcoming.forEach((e,i)=>{
+    const head=box.querySelector(`[data-newshead="${i}"]`);
+    const detail=document.getElementById('newsDetail'+i);
+    const chev=document.getElementById('newsChev'+i);
+    head.onclick=()=>{ const willOpen=detail.classList.contains('closed'); toggleCollapsible(detail,chev); head.closest('.newsCard').classList.toggle('expanded', willOpen); };
+  });
+}
+
+function renderQuality(sorted){
+  const ref=sorted.filter(t=>t.quality==='reference');
+  const mist=sorted.filter(t=>t.quality==='mistake');
+  const canvas=document.getElementById('qualityChart'), empty=document.getElementById('qualityEmpty');
+  if(ref.length+mist.length===0){ canvas.style.display='none'; empty.style.display='block'; return; }
+  canvas.style.display='block'; empty.style.display='none';
+  const wr=arr=>arr.length?(arr.filter(t=>t.result==='win').length/arr.length*100):0;
+  const refWr=wr(ref), mistWr=wr(mist);
+  const data=[+refWr.toFixed(1), +mistWr.toFixed(1)];
+  const colors=[wrColor(refWr).replace('var(--mint)','#00e2a0').replace('var(--coral)','#ff5a6e'), wrColor(mistWr).replace('var(--mint)','#00e2a0').replace('var(--coral)','#ff5a6e')];
+  if(qualityChart) qualityChart.destroy();
+  qualityChart=new Chart(canvas,{type:'bar',data:{labels:['🏆 Эталон ('+ref.length+')','🚨 Ошибка ('+mist.length+')'],datasets:[{label:'Винрейт %',data,backgroundColor:colors,borderRadius:8}]},
+    options:{animation:{duration:800,easing:'easeOutCubic'},indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:(c)=>c.parsed.x+'% винрейт'}}},
+      scales:{x:{min:0,max:100,ticks:{color:'#727d92',callback:v=>v+'%'},grid:{color:'#232733'}},y:{ticks:{color:'#eef1f7',font:{weight:'600'}},grid:{display:false}}}}});
+}
+
+function fmtMoney(n){
+  const sign=n<0?'-':''; n=Math.abs(n);
+  if(n>=1e9) return sign+'$'+(n/1e9).toFixed(2)+'B';
+  if(n>=1e6) return sign+'$'+(n/1e6).toFixed(2)+'M';
+  if(n>=1e3) return sign+'$'+(n/1e3).toFixed(1)+'K';
+  return sign+'$'+n.toFixed(2);
+}
+function animateMoney(el,to){
+  const from=parseFloat(el.dataset.val||'0'); const dur=900,t0=performance.now();
+  function step(t){ const p=Math.min(1,(t-t0)/dur); const val=from+(to-from)*(1-Math.pow(1-p,3));
+    el.textContent=fmtMoney(val);
+    if(p<1) requestAnimationFrame(step); else el.dataset.val=to; }
+  requestAnimationFrame(step);
+}
+function autoFillSim(){
+  if(!trades.length){ alert('В дневнике пока нет сделок для авто-заполнения.'); return; }
+  const avgStake=trades.reduce((a,t)=>a+t.stake,0)/trades.length;
+  const wins=trades.filter(t=>t.result==='win').length;
+  const winRate=wins/trades.length*100;
+  const avgPayout=trades.reduce((a,t)=>a+t.payout,0)/trades.length;
+  document.getElementById('sim_stake').value=avgStake.toFixed(2);
+  document.getElementById('sim_winrate').value=winRate.toFixed(1);
+  document.getElementById('sim_payout').value=avgPayout.toFixed(1);
+}
+function renderSimChart(points){
+  const labels=points.map(p=>p.n), data=points.map(p=>p.bal);
+  const ctx=document.getElementById('simChart'); if(simChart) simChart.destroy();
+  simChart=new Chart(ctx,{type:'line',data:{labels,datasets:[{label:'Прогноз баланса',data,borderColor:'#a56cff',backgroundColor:'rgba(165,108,255,.2)',fill:true,tension:.35,pointRadius:0,borderWidth:2.5}]},
+    options:{animation:{duration:1000,easing:'easeOutQuart'},responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{title:(c)=>c[0].label+' сделок',label:(c)=>fmtMoney(c.parsed.y)}}},
+      scales:{x:{ticks:{color:'#727d92',maxTicksLimit:8},grid:{color:'#232733'}},y:{ticks:{color:'#727d92',callback:v=>fmtMoney(v)},grid:{color:'#232733'}}}}});
+}
+function runSimulation(){
+  const deposit=parseFloat(document.getElementById('sim_deposit').value)||0;
+  const stake=parseFloat(document.getElementById('sim_stake').value)||0;
+  const winRatePct=parseFloat(document.getElementById('sim_winrate').value)||0;
+  const payout=parseFloat(document.getElementById('sim_payout').value)||0;
+  if(deposit<=0||stake<=0){ alert('Укажи депозит и среднюю ставку больше нуля.'); return; }
+  const winRate=Math.min(Math.max(winRatePct/100,0),1);
+  const risk=Math.min(stake/deposit,0.5);
+  const m=winRate*(1+risk*payout/100)+(1-winRate)*(1-risk);
+  const points=[]; for(let n=0;n<=500;n+=10){ points.push({n,bal:deposit*Math.pow(m,n)}); }
+  if(points[points.length-1].n!==500) points.push({n:500,bal:deposit*Math.pow(m,500)});
+  renderSimChart(points);
+  [50,200,500].forEach((n,i)=>{
+    const bal=deposit*Math.pow(m,n);
+    const growth=(bal/deposit-1)*100;
+    animateMoney(document.getElementById('sim'+i),bal);
+    const gEl=document.getElementById('simGrowth'+i);
+    gEl.textContent=(growth>=0?'+':'')+growth.toFixed(0)+'%';
+    gEl.className=growth>=0?'mint':'coral';
+  });
+}
+document.getElementById('simAutoBtn').onclick=autoFillSim;
+document.getElementById('simRunBtn').onclick=runSimulation;
+
+function runMoneyMgmt(){
+  const deposit=parseFloat(document.getElementById('mm_deposit').value)||0;
+  const payout=parseFloat(document.getElementById('mm_payout').value)||0;
+  const note=document.getElementById('mmRiskNote');
+  if(deposit<=0||payout<=0){ alert('Укажи депозит и выплату брокера больше нуля.'); return; }
+  const base=deposit*0.01;
+  const ov1=base/(payout/100);
+  const ov2=(base+ov1)/(payout/100);
+  const ov3=(base+ov1+ov2)/(payout/100);
+  [['mm_base',base],['mm_ov1',ov1],['mm_ov2',ov2],['mm_ov3',ov3]].forEach(([id,val])=>{
+    const el=document.getElementById(id);
+    animateMoney(el,val);
+  });
+  document.getElementById('mm_ov1_note').textContent='отбивает убыток '+fmtMoney(base);
+  document.getElementById('mm_ov2_note').textContent='отбивает убыток '+fmtMoney(base+ov1);
+  document.getElementById('mm_ov3_note').textContent='отбивает убыток '+fmtMoney(base+ov1+ov2);
+  const chain=document.getElementById('mmChain');
+  chain.innerHTML=`
+    <div class="mmChainRow"><span class="mmChainNum">1</span><span>Базовая ставка <b>${fmtMoney(base)}</b> проигрывает → в минусе <b class="coral">-${fmtMoney(base)}</b></span></div>
+    <div class="mmChainRow"><span class="mmChainNum">2</span><span>Перекрытие <b>${fmtMoney(ov1)}</b> при выплате ${payout}% — если выигрывает, даёт прибыль <b class="mint">+${fmtMoney(base)}</b> и полностью отбивает шаг 1</span></div>
+    <div class="mmChainRow"><span class="mmChainNum">3</span><span>Если и она проиграла — общий убыток <b class="coral">-${fmtMoney(base+ov1)}</b> → перекрытие <b>${fmtMoney(ov2)}</b> отбивает уже эту сумму</span></div>
+    <div class="mmChainRow"><span class="mmChainNum">4</span><span>Если проиграла и она — общий убыток <b class="coral">-${fmtMoney(base+ov1+ov2)}</b> → перекрытие <b>${fmtMoney(ov3)}</b> отбивает всю серию</span></div>`;
+  if(deposit<90){
+    note.className='mmNote risky';
+    note.innerHTML=`⚠️ <b>Рискованный старт.</b> Депозит $${deposit.toFixed(0)} попадает в диапазон $5–$90 — это очень маленькая сумма: серия из 2–3 неудачных сделок подряд может почти обнулить счёт, особенно с учётом перекрытий. Депозит от $90 и выше — уже гораздо более комфортный старт.`;
+  } else {
+    note.className='mmNote good';
+    note.innerHTML=`✅ <b>Хороший стартовый депозит.</b> $${deposit.toFixed(0)} даёт запас, чтобы пережить серию неудач и делать перекрытия без риска обнулить счёт за один плохой день.`;
+  }
+  note.style.display='block';
+}
+document.getElementById('mmRunBtn').onclick=runMoneyMgmt;
+runMoneyMgmt();
+
+/* goals */
+const GOALS_KEY='fxbo_goals_v1';
+let goalState={ dayTarget:10, weekTarget:50, monthTarget:200, dayDone:false, weekDone:false, monthDone:false };
+try{ const saved=JSON.parse(localStorage.getItem(GOALS_KEY)); if(saved) goalState=Object.assign(goalState,saved); }catch(e){}
+function saveGoals(){ try{ localStorage.setItem(GOALS_KEY, JSON.stringify(goalState)); }catch(e){} }
+function startOfWeekDate(d){ const dt=new Date(d); dt.setHours(0,0,0,0); const day=(dt.getDay()+6)%7; dt.setDate(dt.getDate()-day); return dt; }
+function startOfMonthDate(d){ return new Date(d.getFullYear(), d.getMonth(), 1); }
+function initGoalInputs(){
+  document.getElementById('goal_day_target').value=goalState.dayTarget;
+  document.getElementById('goal_week_target').value=goalState.weekTarget;
+  document.getElementById('goal_month_target').value=goalState.monthTarget;
+  ['day','week','month'].forEach(key=>{
+    const btn=document.getElementById('goal_'+key+'_toggle');
+    const card=document.getElementById('goalCard_'+key);
+    const done=!!goalState[key+'Done'];
+    btn.classList.toggle('done', done);
+    btn.textContent = done ? '✅ Выполнено' : 'Отметить выполненной';
+    card.classList.toggle('done', done);
+  });
+}
+function bindGoalInputs(){
+  ['day','week','month'].forEach(key=>{
+    const input=document.getElementById('goal_'+key+'_target');
+    input.addEventListener('input', ()=>{ goalState[key+'Target']=parseFloat(input.value)||0; saveGoals(); renderGoals(); });
+    const btn=document.getElementById('goal_'+key+'_toggle');
+    btn.onclick=()=>{ goalState[key+'Done']=!goalState[key+'Done']; saveGoals(); initGoalInputs(); };
+  });
+}
+function updateGoalCard(key, actual){
+  const target=parseFloat(document.getElementById('goal_'+key+'_target').value)||0;
+  const pct = target>0 ? Math.max(0, Math.min(100, actual/target*100)) : 0;
+  const fill=document.getElementById('goal_'+key+'_fill');
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{ fill.style.width=pct+'%'; }));
+  fill.style.background = (target>0 && actual>=target) ? 'var(--mint)' : (actual<0?'var(--coral)':'#f5b942');
+  const actualEl=document.getElementById('goal_'+key+'_actual');
+  actualEl.textContent='Факт: '+fmt(actual);
+  actualEl.className = actual>=0?'mint':'coral';
+  document.getElementById('goal_'+key+'_pct').textContent=pct.toFixed(0)+'%';
+}
+function updateGoalNote(){
+  const dayTarget=parseFloat(document.getElementById('goal_day_target').value)||0;
+  const note=document.getElementById('goalNote');
+  if(dayTarget<=0){ note.innerHTML='Укажи цель на день, чтобы увидеть расчёт на неделю и месяц.'; return; }
+  const week=dayTarget*7, month=dayTarget*30;
+  note.innerHTML=`💡 <b>Как этого добиться:</b> если будешь стабильно зарабатывать <b>${fmtMoney(dayTarget)}</b> в день — через неделю (7 дней) накопится примерно <b>${fmtMoney(week)}</b>, а через месяц (30 дней) — примерно <b>${fmtMoney(month)}</b>. Главное не размер одной сделки, а стабильность изо дня в день: лучше маленький стабильный плюс каждый день, чем редкие крупные ставки вразнос.`;
+}
+function renderGoals(){
+  const now=new Date();
+  const todayStr=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+  const weekStart=startOfWeekDate(now);
+  const monthStart=startOfMonthDate(now);
+  const dayPnl=trades.filter(t=>t.date===todayStr).reduce((a,t)=>a+pnl(t),0);
+  const weekPnl=trades.filter(t=>new Date(t.date+'T00:00:00')>=weekStart).reduce((a,t)=>a+pnl(t),0);
+  const monthPnl=trades.filter(t=>new Date(t.date+'T00:00:00')>=monthStart).reduce((a,t)=>a+pnl(t),0);
+  updateGoalCard('day', dayPnl);
+  updateGoalCard('week', weekPnl);
+  updateGoalCard('month', monthPnl);
+  updateGoalNote();
+}
+initGoalInputs();
+bindGoalInputs();
+renderGoals();
+
+function renderCalendar(sorted){
+  const y=calDate.getFullYear(), m=calDate.getMonth();
+  document.getElementById('calMonthLabel').textContent=MONTHS[m]+' '+y;
+  document.getElementById('calDow').innerHTML=DOW.map(d=>`<div class="calDow">${d}</div>`).join('');
+  const byDate={}; sorted.forEach(t=>{ byDate[t.date]=(byDate[t.date]||0)+pnl(t); });
+  const first=new Date(y,m,1); const startOffset=(first.getDay()+6)%7;
+  const daysInMonth=new Date(y,m+1,0).getDate();
+  let monthSum=0;
+  const grid=document.getElementById('calGrid'); grid.innerHTML='';
+  for(let i=0;i<startOffset;i++){ const c=document.createElement('div'); c.className='calCell empty2'; grid.appendChild(c); }
+  const maxAbs=Math.max(1,...Object.values(byDate).map(v=>Math.abs(v)));
+  for(let d=1;d<=daysInMonth;d++){
+    const ds=y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const val=byDate[ds];
+    const c=document.createElement('div'); c.className='calCell';
+    if(val===undefined){ c.style.background='rgba(255,255,255,.02)'; }
+    else{
+      monthSum+=val;
+      const alpha=0.18+0.55*(Math.abs(val)/maxAbs);
+      c.style.background=val>=0?`rgba(0,226,160,${alpha})`:`rgba(255,90,110,${alpha})`;
+      c.style.borderColor=val>=0?'rgba(0,226,160,.5)':'rgba(255,90,110,.5)';
+    }
+    c.innerHTML=`<div class="d">${d}</div>${val!==undefined?`<div class="p">${val>=0?'+':''}${val.toFixed(0)}</div>`:''}`;
+    grid.appendChild(c);
+  }
+  const pnlEl=document.getElementById('calMonthPnl');
+  pnlEl.textContent=(monthSum>=0?'+$':'-$')+Math.abs(monthSum).toFixed(2)+' за месяц';
+  pnlEl.className='calPnl '+(monthSum>=0?'mint':'coral');
+}
+function rerenderCalOnly(){ renderCalendar([...trades].sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time))); }
+document.getElementById('calPrev').onclick=()=>{ calDate=new Date(calDate.getFullYear(),calDate.getMonth()-1,1); rerenderCalOnly(); };
+document.getElementById('calNext').onclick=()=>{ calDate=new Date(calDate.getFullYear(),calDate.getMonth()+1,1); rerenderCalOnly(); };
+
+function resetTradeForm(full){
+  document.getElementById('f_notes').value=''; resetShots();
+  document.querySelectorAll('#overlapChips .chip').forEach(x=>x.classList.remove('active'));
+  document.querySelector('#overlapChips .chip[data-v="0"]').classList.add('active');
+  overlapCount=0; renderOverlapRows();
+  document.querySelectorAll('#qualityBtns .resbtn').forEach(x=>x.classList.remove('active'));
+  document.querySelector('#qualityBtns .resbtn[data-v="reference"]').classList.add('active');
+  curQuality='reference';
+  if(!full) return;
+  setDir('call');
+  curExp='1м';
+  document.querySelectorAll('#expChips .chip').forEach(x=>x.classList.remove('active'));
+  document.querySelector('#expChips .chip[data-v="1м"]').classList.add('active');
+  curRes='win';
+  document.querySelectorAll('.resbtns:not(.ov_res) .resbtn').forEach(x=>{ if(!x.closest('#overlapRows')&&!x.closest('#qualityBtns')) x.classList.remove('active'); });
+  const mainWinBtn=[...document.querySelectorAll('.resbtns:not(.ov_res) .resbtn')].find(b=>!b.closest('#overlapRows')&&!b.closest('#qualityBtns')&&b.dataset.v==='win');
+  if(mainWinBtn) mainWinBtn.classList.add('active');
+  curPair='EUR/USD'; updatePairBtn();
+  curEmotion=EMOTIONS[0].l; updateEmoBtn();
+  document.getElementById('f_date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('f_time').value='';
+  document.getElementById('f_stake').value='10';
+  document.getElementById('f_payout').value='80';
+}
+
+function populateFormFromTrade(t){
+  setDir(t.direction);
+  curPair=t.pair; updatePairBtn();
+  document.getElementById('f_date').value=t.date;
+  document.getElementById('f_time').value=t.time||'';
+  document.getElementById('f_stake').value=t.stake;
+  document.getElementById('f_payout').value=t.payout;
+  curExp=t.expiry;
+  document.querySelectorAll('#expChips .chip').forEach(x=>x.classList.toggle('active', x.dataset.v===t.expiry));
+  curRes=t.result;
+  document.querySelectorAll('.resbtns:not(.ov_res) .resbtn').forEach(b=>{ if(!b.closest('#overlapRows')&&!b.closest('#qualityBtns')) b.classList.toggle('active', b.dataset.v===t.result); });
+  curQuality=t.quality||'reference';
+  document.querySelectorAll('#qualityBtns .resbtn').forEach(b=>b.classList.toggle('active', b.dataset.v===curQuality));
+  const ovLen=Math.min((t.overlaps||[]).length,3);
+  document.querySelectorAll('#overlapChips .chip').forEach(x=>x.classList.toggle('active', x.dataset.v===String(ovLen)));
+  overlapCount=ovLen; renderOverlapRows();
+  (t.overlaps||[]).forEach((o,i)=>{
+    const row=document.querySelectorAll('#overlapRows .overlapRow')[i];
+    if(!row) return;
+    row.querySelector('.ov_stake').value=o.stake;
+    row.querySelectorAll('.ov_res .resbtn').forEach(b=>b.classList.toggle('active', b.dataset.v===o.result));
+  });
+  curEmotion=t.emotion||EMOTIONS[0].l; updateEmoBtn();
+  document.getElementById('f_notes').value=t.notes||'';
+  imgBeforeData=t.imgBefore||null; imgAfterData=t.imgAfter||null;
+  if(imgBeforeData) showShotPreview('Before',imgBeforeData); else { document.getElementById('shotPrevBefore').style.display='none'; document.getElementById('shotPhBefore').style.display='flex'; document.getElementById('clearBefore').style.display='none'; }
+  if(imgAfterData) showShotPreview('After',imgAfterData); else { document.getElementById('shotPrevAfter').style.display='none'; document.getElementById('shotPhAfter').style.display='flex'; document.getElementById('clearAfter').style.display='none'; }
+}
+
+function startEdit(t){
+  editingId=t.id;
+  switchTab('new');
+  populateFormFromTrade(t);
+  document.getElementById('editBanner').classList.add('show');
+  document.getElementById('tradeFormCard').classList.add('editing');
+  const btn=document.getElementById('addBtn');
+  btn.textContent='💾 Сохранить изменения';
+  btn.classList.add('editMode');
+  document.getElementById('tradeFormCard').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function cancelEdit(){
+  editingId=null;
+  document.getElementById('editBanner').classList.remove('show');
+  document.getElementById('tradeFormCard').classList.remove('editing');
+  const btn=document.getElementById('addBtn');
+  btn.textContent='Записать сделку';
+  btn.classList.remove('editMode');
+  resetTradeForm(true);
+}
+document.getElementById('cancelEditBtn').onclick=cancelEdit;
+
+document.getElementById('addBtn').onclick=()=>{
+  const overlaps=[...document.querySelectorAll('#overlapRows .overlapRow')].map(row=>({
+    stake: parseFloat(row.querySelector('.ov_stake').value)||0,
+    result: row.querySelector('.ov_res .resbtn.active').dataset.v
+  }));
+  const baseData={
+    date:document.getElementById('f_date').value||new Date().toISOString().slice(0,10),
+    time:document.getElementById('f_time').value||new Date().toTimeString().slice(0,5),
+    pair:curPair, direction:curDir, expiry:curExp,
+    stake:parseFloat(document.getElementById('f_stake').value)||0,
+    payout:parseFloat(document.getElementById('f_payout').value)||0,
+    result:curRes, overlaps, quality:curQuality,
+    emotion:curEmotion,
+    notes:document.getElementById('f_notes').value,
+    imgBefore:imgBeforeData, imgAfter:imgAfterData
+  };
+  if(editingId){
+    const idx=trades.findIndex(x=>x.id===editingId);
+    if(idx!==-1) trades[idx]={ ...trades[idx], ...baseData };
+    save();
+    const btn=document.getElementById('addBtn');
+    editingId=null;
+    document.getElementById('editBanner').classList.remove('show');
+    document.getElementById('tradeFormCard').classList.remove('editing');
+    btn.textContent='Записать сделку';
+    btn.classList.remove('editMode');
+    resetTradeForm(true);
+    render();
+    showToast('✅ Изменения сохранены');
+  } else {
+    const t={ id:Date.now()+'_'+Math.random().toString(36).slice(2), ...baseData };
+    trades.push(t); save();
+    resetTradeForm();
+    render();
+    showToast('✅ Сделка успешно записана');
+  }
+};
+
+async function initAI(){ try{ sampleFn=await claude.use('sample'); }catch(e){ sampleFn=null; } }
+initAI();
+
+document.getElementById('aiBtn').onclick=async ()=>{
+  const out=document.getElementById('aiOut');
+  if(!sampleFn){ out.textContent='ИИ недоступен в этом окне.'; return; }
+  if(trades.length<3){ out.textContent='Добавь хотя бы 3 сделки для анализа.'; return; }
+  out.textContent='Анализирую сделки...';
+  const data=trades.map(t=>({pair:t.pair,dir:t.direction,exp:t.expiry,stake:t.stake,payout:t.payout,result:t.result,
+    overlaps:(t.overlaps||[]).map(o=>({stake:o.stake,result:o.result})),
+    emotion:t.emotion,quality:t.quality||'не отмечено',notes:t.notes,date:t.date,time:t.time,weekday:DOW[weekdayIdx(t.date)],session:sessionFor(t.time).short,itogPnl:pnl(t)}));
+  const prompt=`Ты — очень опытный, но простой в общении наставник по бинарным опционам на форекс. Объясняй всё максимально понятным, бытовым языком, без сложных терминов и названий стратегий (никаких "мартингейл" и подобных умных слов) — как будто говоришь с другом без опыта в трейдинге. При этом разбор должен быть подробным и по существу.
+
+Данные сделок (включая перекрытия — докрытия убыточной сделки, если они были, максимум 3 на сделку; поле quality означает "reference" — сделка по правилам, "mistake" — нарушение правил):
+${JSON.stringify(data)}
+
+Сделай подробный разбор строго по структуре, коротко и просто в каждом пункте:
+1. ОШИБКИ — какие конкретные повторяющиеся ошибки видны (пары, время, сессия Азия/Европа/США, дни недели, эмоции, докрытия) и почему это мешает.
+2. ЧТО ХОРОШО — конкретные сильные стороны, которые стоит повторять.
+3. ПРО ПЕРЕКРЫТИЯ — если докрытия были, помогают они спасать деньги или наоборот увеличивают потери, и как поступать в следующий раз.
+4. ЭТАЛОН VS ОШИБКА — сравни, насколько лучше результат у сделок с quality "reference" по сравнению с "mistake", и что это значит на практике.
+5. КАК БЫ Я ПОСТУПИЛ — опиши по шагам, как ты бы действовал в самых частых убыточных ситуациях этого трейдера (конкретная пара/время/эмоция).
+6. 3 ГЛАВНЫХ СОВЕТА на ближайшую неделю, простыми словами.
+Пиши тепло, по-дружески, без вступлений и воды.`;
+  try{ const res=await sampleFn(prompt,{modelTier:'default',onText:({text})=>{out.textContent=text;}}); out.textContent=res.text; }
+  catch(e){ out.textContent='Не удалось получить разбор. Попробуй ещё раз.'; }
+};
+
+document.getElementById('errBtn').onclick=async ()=>{
+  const out=document.getElementById('errOut');
+  if(!sampleFn){ out.textContent='ИИ недоступен в этом окне.'; return; }
+  if(trades.length<3){ out.textContent='Добавь хотя бы 3 сделки для анализа.'; return; }
+  out.textContent='Ищу повторяющиеся ошибки...';
+  const data=trades.map(t=>({pair:t.pair,dir:t.direction,exp:t.expiry,stake:t.stake,payout:t.payout,result:t.result,
+    overlaps:(t.overlaps||[]).map(o=>({stake:o.stake,result:o.result})),
+    emotion:t.emotion,quality:t.quality||'не отмечено',notes:t.notes,date:t.date,time:t.time,weekday:DOW[weekdayIdx(t.date)],session:sessionFor(t.time).short,itogPnl:pnl(t)}));
+  const prompt=`Ты — наставник по бинарным опционам на форекс, который говорит очень просто и по-дружески, без сложных терминов и названий стратегий.
+
+Твоя ЕДИНСТВЕННАЯ задача сейчас — найти и разложить по полочкам ТОЛЬКО ошибки трейдера. Ничего про плюсы, ничего про то, что хорошо — только ошибки. Никакой воды и вступлений.
+
+Данные сделок (включая перекрытия — докрытия убыточной сделки, максимум 3 на сделку):
+${JSON.stringify(data)}
+
+Ответь строго по структуре:
+1. САМАЯ ЧАСТАЯ ОШИБКА — какая ошибка повторяется чаще всего (по паре/времени/сессии Азия-Европа-США/дню недели/эмоции/докрытиям/тому, что сделка отмечена как "mistake"), сколько раз примерно она встретилась, и простыми словами почему это ошибка.
+2. ЕЩЁ 2-4 ПОВТОРЯЮЩИЕСЯ ОШИБКИ — каждую отдельным пунктом: что не так и в каких ситуациях это происходит.
+3. ОПАСНЫЙ ПАТТЕРН — если видно, что убыточные сделки чаще случаются в определённом эмоциональном состоянии (особенно "месть за убыток", "азарт/жадность", "сомнение") — опиши это отдельно, простыми словами.
+4. ЧТО СДЕЛАТЬ ПРЯМО СЕЙЧАС — 3 коротких конкретных действия, чтобы перестать повторять эти ошибки.
+Пиши коротко, по делу, дружелюбно, но честно — как будто указываешь другу прямо на его слабые места, чтобы он их видел чётко.`;
+  try{ const res=await sampleFn(prompt,{modelTier:'default',onText:({text})=>{out.textContent=text;}}); out.textContent=res.text; }
+  catch(e){ out.textContent='Не удалось получить разбор. Попробуй ещё раз.'; }
+};
+
+document.getElementById('f_date').value=new Date().toISOString().slice(0,10);
+render();
+renderNews();
+</script>
+</body>
+</html>
