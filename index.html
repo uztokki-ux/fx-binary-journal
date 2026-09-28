@@ -252,6 +252,18 @@ body{transition:background-color .4s ease,color .4s ease;}
 .calCell.empty2{border:1px dashed var(--border);opacity:.35;}
 .legend{display:flex;gap:14px;margin-top:10px;font-size:10.5px;color:var(--muted);align-items:center;flex-wrap:wrap;}
 .legend i{width:10px;height:10px;border-radius:3px;display:inline-block;margin-right:5px;}
+/* hour heatmap */
+.heatWrap{overflow-x:auto;padding-bottom:4px;}
+.heatGrid{display:grid;grid-template-columns:38px repeat(24,minmax(20px,1fr));gap:3px;min-width:760px;}
+.heatHourLabel{font-size:9px;color:var(--muted);text-align:center;padding-bottom:3px;font-variant-numeric:tabular-nums;}
+.heatDowLabel{font-size:10.5px;color:var(--muted);display:flex;align-items:center;font-weight:700;}
+.heatCell{aspect-ratio:1;border-radius:5px;border:1px solid var(--border);cursor:default;transition:transform .15s,box-shadow .15s;opacity:0;animation:fadeUp .3s ease forwards;}
+.heatCell:hover{transform:scale(1.3);z-index:3;box-shadow:0 8px 18px rgba(0,0,0,.45);border-color:var(--text);}
+.heatCell.empty{background:rgba(255,255,255,.025);border-style:dashed;opacity:1;}
+.heatTooltip{position:fixed;background:#12151d;border:1px solid var(--accent);border-radius:10px;padding:9px 12px;font-size:11.5px;line-height:1.55;color:#eef1f7;pointer-events:none;z-index:90;box-shadow:0 12px 30px rgba(0,0,0,.5);opacity:0;transition:opacity .12s;white-space:nowrap;}
+.heatTooltip.show{opacity:1;}
+.heatTooltip b{color:var(--text);}
+.heatLegendGrad{height:10px;width:110px;border-radius:5px;background:linear-gradient(90deg,var(--coral),#f5b942,var(--mint));display:inline-block;}
 /* animated pickers (pair + emotion) */
 .pairPicker{position:relative;}
 .pairBtn{display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;border:1px solid var(--border);border-radius:10px;background:#0d1017;color:var(--text);cursor:pointer;font-size:14px;transition:.2s;}
@@ -350,6 +362,18 @@ body{transition:background-color .4s ease,color .4s ease;}
   <div class="card">
     <h2>Статистика по сессиям (время суток) <button class="collToggle" id="sessToggle">▾</button></h2>
     <div class="collapsible" id="sessBody"><div class="sessGrid" id="sessionStats"></div></div>
+  </div>
+
+  <div class="card">
+    <h2>🔥 Тепловая карта по часам <button class="collToggle" id="heatToggle">▾</button> <span style="font-weight:400;text-transform:none;font-size:11px;color:var(--muted)">день недели × час, по МСК</span></h2>
+    <div class="collapsible" id="heatBody">
+      <div class="heatWrap"><div class="heatGrid" id="heatGrid"></div></div>
+      <div class="legend">
+        <span class="heatLegendGrad"></span><span>винрейт: низкий → высокий</span>
+        <span style="margin-left:6px;">· насыщенность = число сделок в этот час</span>
+      </div>
+      <div class="empty" id="heatEmpty" style="display:none">Добавь сделки со временем входа — тепловая карта появится сама.</div>
+    </div>
   </div>
 
   <div class="card">
@@ -574,6 +598,7 @@ body{transition:background-color .4s ease,color .4s ease;}
 </div>
 
 <div class="toast" id="toast">✅ Сделка успешно записана</div>
+<div class="heatTooltip" id="heatTooltip"></div>
 
 <div class="goalCongrats" id="goalCongrats">
   <div class="goalCongratsCard">
@@ -809,7 +834,7 @@ function switchTab(name){
 document.querySelectorAll('.tabBtn').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
 
 bindToggle('calToggle','calBody');
-bindToggle('wdToggle','wdBody'); bindToggle('sessToggle','sessBody'); bindToggle('expToggle','expBody');
+bindToggle('wdToggle','wdBody'); bindToggle('sessToggle','sessBody'); bindToggle('heatToggle','heatBody'); bindToggle('expToggle','expBody');
 bindToggle('qualToggle','qualBody'); bindToggle('simToggle','simBody');
 
 /* pair picker */
@@ -1012,7 +1037,7 @@ function render(){
   document.querySelectorAll('.del').forEach(b=>b.onclick=()=>{ if(editingId===b.dataset.id) cancelEdit(); trades=trades.filter(t=>t.id!==b.dataset.id);save();render();});
   document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{ const t=trades.find(x=>x.id===b.dataset.edit); if(t) startEdit(t); });
   document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{ const t=trades.find(x=>x.id===b.dataset.view); if(t) openLightbox(t); });
-  renderStats(sorted); renderWeekday(sorted); renderCalendar(sorted); renderSessions(sorted); renderExpiry(sorted); renderQuality(sorted); renderGoals();
+  renderStats(sorted); renderWeekday(sorted); renderCalendar(sorted); renderSessions(sorted); renderHourHeatmap(sorted); renderExpiry(sorted); renderQuality(sorted); renderGoals();
 }
 
 function renderStats(sorted){
@@ -1063,6 +1088,61 @@ function renderSessions(sorted){
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
     box.querySelectorAll('.fill').forEach(el=>{ el.style.width=el.dataset.target+'%'; });
   }));
+}
+
+function renderHourHeatmap(sorted){
+  const grid=document.getElementById('heatGrid');
+  const withTime=sorted.filter(t=>t.time);
+  document.getElementById('heatEmpty').style.display=withTime.length?'none':'block';
+  document.getElementById('heatGrid').closest('.heatWrap').style.display=withTime.length?'block':'none';
+  document.querySelector('#heatBody .legend').style.display=withTime.length?'flex':'none';
+  if(!withTime.length){ grid.innerHTML=''; return; }
+  const buckets={};
+  withTime.forEach(t=>{
+    const dow=weekdayIdx(t.date);
+    const hour=parseInt(t.time.split(':')[0],10);
+    if(isNaN(hour)) return;
+    const key=dow+'-'+hour;
+    if(!buckets[key]) buckets[key]={count:0,wins:0,sum:0};
+    buckets[key].count++; if(t.result==='win') buckets[key].wins++; buckets[key].sum+=pnl(t);
+  });
+  let maxCount=1; Object.values(buckets).forEach(b=>{ if(b.count>maxCount) maxCount=b.count; });
+  let html='<div class="heatDowLabel"></div>';
+  for(let h=0;h<24;h++){ html+=`<div class="heatHourLabel">${h%3===0?h:''}</div>`; }
+  DOW.forEach((d,dow)=>{
+    html+=`<div class="heatDowLabel">${d}</div>`;
+    for(let h=0;h<24;h++){
+      const b=buckets[dow+'-'+h];
+      const delay=((dow*24+h)*0.004).toFixed(3);
+      if(!b){ html+=`<div class="heatCell empty" data-dow="${dow}" data-hour="${h}" style="animation-delay:${delay}s"></div>`; continue; }
+      const wr=b.wins/b.count*100;
+      const color=wr>=55?'0,226,160':(wr<45?'255,90,110':'245,185,66');
+      const alpha=(0.25+0.65*(b.count/maxCount)).toFixed(2);
+      html+=`<div class="heatCell" data-dow="${dow}" data-hour="${h}" data-count="${b.count}" data-wr="${wr.toFixed(0)}" data-sum="${b.sum.toFixed(2)}" style="background:rgba(${color},${alpha});border-color:rgba(${color},.5);animation-delay:${delay}s;"></div>`;
+    }
+  });
+  grid.innerHTML=html;
+  bindHeatTooltips();
+}
+
+function bindHeatTooltips(){
+  const tip=document.getElementById('heatTooltip');
+  document.querySelectorAll('.heatCell').forEach(cell=>{
+    cell.addEventListener('mouseenter', ()=>{
+      const dow=+cell.dataset.dow, hour=+cell.dataset.hour;
+      const label=DOW[dow]+', '+String(hour).padStart(2,'0')+':00–'+String((hour+1)%24).padStart(2,'0')+':00 МСК';
+      if(cell.classList.contains('empty')){ tip.innerHTML=`<b>${label}</b><br>сделок не было`; }
+      else{
+        const count=cell.dataset.count, wr=cell.dataset.wr, sum=parseFloat(cell.dataset.sum);
+        tip.innerHTML=`<b>${label}</b><br>${count} сделок · винрейт ${wr}%<br>${sum>=0?'+':''}${sum.toFixed(2)}$`;
+      }
+      tip.classList.add('show');
+    });
+    cell.addEventListener('mousemove', e=>{
+      tip.style.left=(e.clientX+14)+'px'; tip.style.top=(e.clientY+14)+'px';
+    });
+    cell.addEventListener('mouseleave', ()=>tip.classList.remove('show'));
+  });
 }
 
 function renderExpiry(sorted){
