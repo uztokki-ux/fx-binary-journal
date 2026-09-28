@@ -19,8 +19,10 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,S
 .blob2{width:380px;height:380px;background:var(--accent);bottom:-140px;left:-100px;animation-delay:3s;}
 @keyframes floatBlob{0%,100%{transform:translate(0,0)}50%{transform:translate(30px,-25px)}}
 ::-webkit-scrollbar{height:8px;width:8px}::-webkit-scrollbar-thumb{background:#2a3140;border-radius:6px}
-.nav{display:flex;align-items:center;padding:14px 20px;border-bottom:1px solid var(--border);position:sticky;top:0;background:rgba(10,12,17,.85);backdrop-filter:blur(10px);z-index:5;}
+.nav{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border);position:sticky;top:0;background:rgba(10,12,17,.85);backdrop-filter:blur(10px);z-index:5;}
 .brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.4px;font-size:16px;}
+.settingsBtn{background:none;border:1px solid var(--border);color:var(--muted);width:34px;height:34px;border-radius:10px;cursor:pointer;font-size:16px;transition:.2s;display:flex;align-items:center;justify-content:center;}
+.settingsBtn:hover{border-color:var(--accent);color:var(--text);transform:rotate(45deg);}
 .brand .dot{width:9px;height:9px;border-radius:50%;background:var(--mint);box-shadow:0 0 12px var(--mint);animation:pulse 2s infinite;}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 .wrap{max-width:1080px;margin:0 auto;padding:20px 16px 70px;position:relative;z-index:1;}
@@ -69,7 +71,9 @@ textarea{min-height:48px;resize:vertical;}
 .resbtn.win.active{border-color:var(--mint);color:var(--mint);background:rgba(0,226,160,.1);}
 .resbtn.loss.active{border-color:var(--coral);color:var(--coral);background:rgba(255,90,110,.1);}
 .resbtn.draw.active{border-color:var(--muted);color:var(--text);background:rgba(255,255,255,.06);}
-.overlapRow{display:grid;grid-template-columns:1fr 2fr;gap:10px;align-items:end;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;padding:10px;margin-bottom:8px;animation:fadeUp .3s ease both;}
+.overlapRow{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:end;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;padding:10px;margin-bottom:8px;animation:fadeUp .3s ease both;}
+.ov_expiry{display:flex;gap:5px;flex-wrap:wrap;}
+.ov_expiry .chip{padding:6px 10px;font-size:11px;}
 .qualityBtns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
 .overlapRow .resbtns{margin-bottom:0;}
 button.submit{width:100%;padding:14px;border:none;border-radius:12px;background:linear-gradient(90deg,var(--mint),#00c48c);color:#04140f;font-weight:800;font-size:14.5px;cursor:pointer;margin-top:4px;transition:.2s;}
@@ -152,6 +156,40 @@ tbody tr:hover{background:rgba(255,255,255,.03)}
 .goalCongratsClose:hover{filter:brightness(1.08);transform:translateY(-1px);}
 .confettiPiece{position:absolute;top:-12px;width:9px;height:14px;opacity:.95;border-radius:2px;animation:confettiFall linear forwards;will-change:transform;z-index:1;}
 @keyframes confettiFall{0%{transform:translateY(0) translateX(0) rotate(0deg);opacity:1;}100%{transform:translateY(420px) translateX(var(--drift,0px)) rotate(var(--spin,540deg));opacity:0;}}
+
+/* settings drawer */
+.settingsOverlay{position:fixed;inset:0;background:rgba(4,6,10,.6);backdrop-filter:blur(3px);display:none;z-index:70;opacity:0;transition:opacity .3s ease;}
+.settingsOverlay.open{display:block;opacity:1;}
+.settingsPanel{position:fixed;top:0;right:0;bottom:0;width:360px;max-width:92vw;background:linear-gradient(180deg,var(--panel),var(--panel2));border-left:1px solid var(--border);padding:22px 20px;overflow-y:auto;transform:translateX(100%);transition:transform .35s cubic-bezier(.22,1,.36,1);box-shadow:-20px 0 50px rgba(0,0,0,.4);}
+.settingsOverlay.open .settingsPanel{transform:translateX(0);}
+.settingsHead{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+.settingsHead h3{margin:0;font-size:15px;}
+.settingsCloseBtn{background:rgba(255,255,255,.06);border:none;color:var(--text);width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:13px;transition:.2s;}
+.settingsCloseBtn:hover{background:rgba(255,255,255,.14);transform:rotate(90deg);}
+.settingsSection{margin-bottom:22px;}
+.settingsLabel{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:800;margin-bottom:10px;}
+.themeGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.themeSwatch{border-radius:14px;padding:10px 8px;cursor:pointer;border:2px solid var(--border);transition:.2s;text-align:center;}
+.themeSwatch:hover{transform:translateY(-2px);}
+.themeSwatch.sel{border-color:var(--accent);box-shadow:0 0 0 3px rgba(108,140,255,.2);}
+.themePreview{height:34px;border-radius:9px;margin-bottom:7px;display:flex;overflow:hidden;border:1px solid rgba(255,255,255,.08);}
+.themePreview span{flex:1;}
+.themeName{font-size:10px;color:var(--text);font-weight:700;}
+.settingsToggleRow{display:flex;align-items:center;justify-content:space-between;padding:10px 0;font-size:12.5px;color:#dde3f0;border-bottom:1px solid var(--border);}
+.settingsToggleRow:last-child{border-bottom:none;}
+.switch{position:relative;display:inline-block;width:42px;height:24px;flex:none;}
+.switch input{opacity:0;width:0;height:0;}
+.switch .slider{position:absolute;cursor:pointer;inset:0;background:#2a3140;border-radius:24px;transition:.25s;}
+.switch .slider:before{content:"";position:absolute;height:18px;width:18px;left:3px;top:3px;background:#eef1f7;border-radius:50%;transition:.25s;}
+.switch input:checked + .slider{background:var(--mint);}
+.switch input:checked + .slider:before{transform:translateX(18px);}
+.settingsNote{font-size:11px;color:var(--muted);line-height:1.6;padding:12px 14px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid var(--border);}
+.quickRepeatBtn{background:rgba(108,140,255,.12);border:1px solid rgba(108,140,255,.35);color:var(--accent);border-radius:10px;padding:9px 14px;font-size:12.5px;font-weight:700;cursor:pointer;transition:.2s;margin-bottom:12px;display:inline-flex;align-items:center;gap:6px;}
+.quickRepeatBtn:hover{background:rgba(108,140,255,.2);transform:translateY(-1px);}
+html.noAnim *{animation-duration:0.001s!important;animation-delay:0s!important;transition-duration:0.001s!important;}
+:root{transition:background-color .4s ease;}
+body{transition:background-color .4s ease,color .4s ease;}
+.card,.stat,.sessTile,.goalCard,.newsCard,.calCell,.mmChainRow,.lbInner,input,select,textarea,.chip,.resbtn,.dirbtn,.tabBtn,.pairBtn,.goalToggle{transition:background-color .35s ease,border-color .35s ease,color .35s ease,box-shadow .25s ease,transform .2s ease;}
 .mmChain{display:flex;flex-direction:column;gap:8px;margin-top:16px;}
 .mmChainRow{display:flex;gap:10px;align-items:flex-start;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:12.5px;line-height:1.5;color:#dde3f0;animation:fadeUp .35s ease both;transition:.2s;}
 .mmChainRow:hover{border-color:#f5b942;background:rgba(245,185,66,.06);}
@@ -257,11 +295,24 @@ tbody tr:hover{background:rgba(255,255,255,.03)}
 .lbInfo .it span{color:var(--muted);font-size:10px;text-transform:uppercase;}
 .lbNotes{margin-top:10px;font-size:13px;color:#dde3f0;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;padding:10px;}
 .lbOverlaps{margin-top:10px;font-size:12.5px;color:var(--muted);}
+.tradeAnalysis{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);}
+.taHead{font-size:13px;font-weight:800;padding:9px 14px;border-radius:10px;margin-bottom:12px;display:inline-block;animation:fadeUp .35s ease both;}
+.taHead.ta-good{background:rgba(0,226,160,.12);color:var(--mint);border:1px solid rgba(0,226,160,.35);}
+.taHead.ta-mixed{background:rgba(245,185,66,.12);color:#f5b942;border:1px solid rgba(245,185,66,.35);}
+.taHead.ta-risky{background:rgba(255,90,110,.12);color:var(--coral);border:1px solid rgba(255,90,110,.35);}
+.taSection{margin-bottom:12px;}
+.taSectionTitle{font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;font-weight:800;margin-bottom:6px;}
+.taItem{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;line-height:1.5;color:#dde3f0;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;padding:8px 10px;margin-bottom:6px;opacity:0;animation:fadeUp .4s ease forwards;transition:border-color .2s,transform .2s;}
+.taItem:hover{transform:translateX(3px);border-color:var(--accent);}
+.taItem.risk{border-color:rgba(255,90,110,.25);}
+.taIcon{flex:none;font-size:13px;}
+.taTip{margin-top:4px;padding:12px 14px;border-radius:12px;background:rgba(108,140,255,.08);border:1px solid rgba(108,140,255,.3);font-size:12.5px;line-height:1.55;color:#dde3f0;display:flex;gap:10px;align-items:flex-start;animation:fadeUp .45s ease both;}
+.taTipIcon{flex:none;font-size:15px;}
 </style>
 </head>
 <body>
 <div class="blob blob1"></div><div class="blob blob2"></div>
-<div class="nav"><div class="brand"><div class="dot"></div>FX BINARY JOURNAL</div></div>
+<div class="nav"><div class="brand"><div class="dot"></div>FX BINARY JOURNAL</div><button type="button" class="settingsBtn" id="settingsBtn" title="Настройки дневника">⚙️</button></div>
 <div class="tabBar">
   <button class="tabBtn active" data-tab="stats"><span class="tabIco">📊</span>Обзор</button>
   <button class="tabBtn" data-tab="news"><span class="tabIco">📰</span>Новости</button>
@@ -418,6 +469,7 @@ tbody tr:hover{background:rgba(255,255,255,.03)}
       <span>✏️ Редактирование сделки — измени поля и нажми «Сохранить изменения»</span>
       <button type="button" id="cancelEditBtn">Отмена</button>
     </div>
+    <button type="button" class="quickRepeatBtn" id="quickRepeatBtn">⚡ Повторить последнюю сделку</button>
     <div class="dirbtns">
       <button type="button" class="dirbtn call active" id="btnCall">▲ CALL (вверх)</button>
       <button type="button" class="dirbtn put" id="btnPut">▼ PUT (вниз)</button>
@@ -533,6 +585,35 @@ tbody tr:hover{background:rgba(255,255,255,.03)}
   </div>
 </div>
 
+<div class="settingsOverlay" id="settingsOverlay">
+  <div class="settingsPanel" id="settingsPanel">
+    <div class="settingsHead"><h3>⚙️ Настройки дневника</h3><button type="button" class="settingsCloseBtn" id="settingsCloseBtn">✕</button></div>
+
+    <div class="settingsSection">
+      <div class="settingsLabel">🎨 Тема оформления</div>
+      <div class="themeGrid" id="themeGrid"></div>
+    </div>
+
+    <div class="settingsSection">
+      <div class="settingsLabel">🛠️ Поведение</div>
+      <div class="settingsToggleRow">
+        <span>✨ Анимации интерфейса</span>
+        <label class="switch"><input type="checkbox" id="toggleAnim" checked><span class="slider"></span></label>
+      </div>
+      <div class="settingsToggleRow">
+        <span>🎉 Конфетти при выполнении цели</span>
+        <label class="switch"><input type="checkbox" id="toggleConfetti" checked><span class="slider"></span></label>
+      </div>
+      <div class="settingsToggleRow">
+        <span>💾 Автосохранение черновика новой сделки</span>
+        <label class="switch"><input type="checkbox" id="toggleDraft" checked><span class="slider"></span></label>
+      </div>
+    </div>
+
+    <div class="settingsNote">💡 Полностью автоматическая запись сделок прямо с брокера технически невозможна в браузерном дневнике — сайт не имеет доступа к торговой площадке. Зато есть два рабочих способа ускорить ввод: кнопка «⚡ Повторить последнюю сделку» в форме новой сделки заполняет пару/направление/ставку в один клик, а автосохранение черновика (выше) не даст потерять уже введённые данные, если случайно закроешь вкладку.</div>
+  </div>
+</div>
+
 <div class="lightbox" id="lightbox">
   <div class="lbInner">
     <button class="lbClose" id="lbClose">✕</button>
@@ -543,10 +624,33 @@ tbody tr:hover{background:rgba(255,255,255,.03)}
     <div class="lbInfo" id="lbInfo"></div>
     <div class="lbOverlaps" id="lbOverlaps"></div>
     <div class="lbNotes" id="lbNotes" style="display:none"></div>
+    <div class="tradeAnalysis" id="lbAnalysis"></div>
   </div>
 </div>
 
 <script>
+/* settings: theme, animations, confetti, draft autosave — applied as early as possible to avoid flashing the default theme */
+const THEMES={
+  dark:{name:'Тёмная',vars:{'--bg':'#0a0c11','--panel':'#12151d','--panel2':'#171b25','--border':'#232733','--text':'#eef1f7','--muted':'#727d92','--mint':'#00e2a0','--coral':'#ff5a6e','--accent':'#6c8cff'}},
+  ocean:{name:'Океан',vars:{'--bg':'#071a24','--panel':'#0c2734','--panel2':'#123244','--border':'#1c3f52','--text':'#eaf6fb','--muted':'#6f93a3','--mint':'#22d3ee','--coral':'#fb7185','--accent':'#38bdf8'}},
+  sunset:{name:'Закат',vars:{'--bg':'#1a0f14','--panel':'#26161d','--panel2':'#301c25','--border':'#452631','--text':'#fdf1ee','--muted':'#a67f82','--mint':'#ffb454','--coral':'#ff5a7a','--accent':'#ff7a59'}},
+  matrix:{name:'Матрица',vars:{'--bg':'#050a06','--panel':'#0b160d','--panel2':'#0f1e12','--border':'#1c3320','--text':'#dff5e3','--muted':'#5f8a6a','--mint':'#39ff88','--coral':'#ff5a5a','--accent':'#22c55e'}},
+  violet:{name:'Фиолет',vars:{'--bg':'#0f0a1a','--panel':'#181026','--panel2':'#201432','--border':'#332249','--text':'#f2edfa','--muted':'#8b7ba3','--mint':'#22e2a0','--coral':'#ff6b9d','--accent':'#a56cff'}}
+};
+const SETTINGS_KEY='fxbo_settings_v1';
+let appSettings={theme:'dark', anim:true, confetti:true, draft:true};
+try{ const s=JSON.parse(localStorage.getItem(SETTINGS_KEY)); if(s) appSettings=Object.assign(appSettings,s); }catch(e){}
+function saveSettings(){ try{ localStorage.setItem(SETTINGS_KEY, JSON.stringify(appSettings)); }catch(e){} }
+function applyTheme(key){
+  const theme=THEMES[key]||THEMES.dark;
+  Object.entries(theme.vars).forEach(([k,v])=>document.documentElement.style.setProperty(k,v));
+  appSettings.theme=key; saveSettings();
+  document.querySelectorAll('.themeSwatch').forEach(el=>el.classList.toggle('sel', el.dataset.key===key));
+}
+function applyAnimSetting(){ document.documentElement.classList.toggle('noAnim', !appSettings.anim); }
+applyTheme(appSettings.theme);
+applyAnimSetting();
+
 const KEY='fxbo_trades_v4';
 let trades=[]; try{trades=JSON.parse(localStorage.getItem(KEY))||[];}catch(e){trades=[];}
 let weekChart, expiryChart, qualityChart, simChart, sampleFn=null;
@@ -628,7 +732,14 @@ function renderOverlapRows(){
   for(let i=0;i<overlapCount;i++){
     const row=document.createElement('div'); row.className='overlapRow';
     row.innerHTML=`<div><label>Перекрытие ${i+1} · ставка ($)</label><input type="number" step="any" class="ov_stake" value="10"></div>
-      <div class="resbtns ov_res">
+      <div><label>Экспирация перекрытия</label>
+        <div class="chips ov_expiry">
+          <div class="chip active" data-v="1м">1м</div><div class="chip" data-v="2м">2м</div>
+          <div class="chip" data-v="3м">3м</div><div class="chip" data-v="4м">4м</div>
+          <div class="chip" data-v="5м">5м</div>
+        </div>
+      </div>
+      <div class="resbtns ov_res" style="grid-column:1 / -1;">
         <button type="button" class="resbtn win active" data-v="win">WIN</button>
         <button type="button" class="resbtn loss" data-v="loss">LOSS</button>
         <button type="button" class="resbtn draw" data-v="draw">DRAW</button>
@@ -637,6 +748,9 @@ function renderOverlapRows(){
   }
   wrap.querySelectorAll('.ov_res').forEach(group=>{
     group.querySelectorAll('.resbtn').forEach(b=>b.onclick=()=>{ group.querySelectorAll('.resbtn').forEach(x=>x.classList.remove('active')); b.classList.add('active'); });
+  });
+  wrap.querySelectorAll('.ov_expiry').forEach(group=>{
+    group.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{ group.querySelectorAll('.chip').forEach(x=>x.classList.remove('active')); b.classList.add('active'); });
   });
 }
 
@@ -792,6 +906,64 @@ function resetShots(){
   });
 }
 
+/* per-trade analysis */
+const RISKY_EMOTIONS={
+  'Месть за убыток':'Вошёл в сделку в состоянии «месть за убыток» — желание немедленно отыграться часто ведёт к необдуманным входам без сетапа.',
+  'Азарт/жадность':'Состояние «азарт/жадность» подталкивает увеличивать ставку и входить чаще, чем нужно — это повышает риск серии убытков.',
+  'Страх':'Сделка совершена в состоянии страха — вход мог получиться нервным (слишком поздним или слишком ранним) из-за спешки.',
+  'Скука/от нечего делать':'Вход «от скуки» — сделки без чёткого сетапа реже совпадают с твоими рабочими правилами.',
+  'Сомнение':'Отмечено состояние сомнения — если не было уверенности в сетапе, вход стоило пропустить.'
+};
+const CALM_EMOTIONS=['Спокойствие','Уверенность'];
+function analyzeTrade(t){
+  const p=pnl(t);
+  const good=[], risk=[];
+  const overlaps=t.overlaps||[];
+  const ovCount=overlaps.length;
+  if(t.quality==='reference'){ good.push('Сделка отмечена как «🏆 Эталон» — она соответствовала твоим правилам входа.'); }
+  else if(t.quality==='mistake'){ risk.push('Сделка отмечена как «🚨 Слив/Ошибка» — сам факт, что ты это заметил, уже хороший знак, но стоит разобрать, что заставило нарушить план.'); }
+  if(CALM_EMOTIONS.includes(t.emotion)){ good.push('Состояние на входе — «'+t.emotion+'» — спокойный настрой снижает шанс импульсивного решения.'); }
+  else if(RISKY_EMOTIONS[t.emotion]){ risk.push(RISKY_EMOTIONS[t.emotion]); }
+  if(ovCount===0){
+    if(t.result==='win') good.push('Сделка закрылась в плюс без единого докрытия — чистый результат по плану, без лишнего риска на депозит.');
+  } else {
+    if(ovCount===3) risk.push('Использованы все 3 перекрытия подряд — это самая тяжёлая для депозита цепочка; серии из 3+ убытков подряд случаются регулярно, и депозит был близко к серьёзной просадке.');
+    else risk.push('Потребовалось докрытие ('+ovCount+') — основная сделка не сработала с первого раза, стоит присмотреться, что было не так с исходным входом.');
+    if(p>0) good.push('Несмотря на убыточный старт, докрытия вывели сделку в итоговый плюс — риск в моменте был под контролем.');
+    else risk.push('Докрытия не спасли ситуацию — вся серия закрылась в минус, в таком раскладе иногда лучше было остановиться раньше.');
+  }
+  if(t.notes && t.notes.trim()){ good.push('Записан разбор графика — по таким заметкам легче находить закономерности между сделками.'); }
+  else { risk.push('Заметка по сделке не заполнена — без разбора сложнее понять, почему был именно такой вход, когда будешь пересматривать историю позже.'); }
+  if(t.result==='loss' && ovCount===0 && t.quality==='reference'){ good.push('Сделка была по всем правилам, но всё равно закрылась в минус — это нормальная часть винрейта, если не превращается в системную проблему.'); }
+  let verdict='good';
+  if(risk.length>=2 || (t.quality==='mistake' && p<0)) verdict='risky';
+  else if(risk.length===1) verdict='mixed';
+  let tip;
+  if(RISKY_EMOTIONS[t.emotion]) tip='Совет: перед следующим входом в похожем состоянии («'+t.emotion+'») сделай паузу минимум 5 минут и заново сверься с чек-листом своей стратегии.';
+  else if(t.quality==='mistake') tip='Совет: выпиши конкретное правило, которое было нарушено в этот раз — и держи его на видном месте перед следующей сессией.';
+  else if(ovCount===3) tip='Совет: заранее реши максимальное число докрытий на сделку и не отступай от него — это главный щит для депозита.';
+  else if(!t.notes || !t.notes.trim()) tip='Совет: возьми за привычку в паре слов фиксировать, почему вошёл в сделку — через 20–30 записей появятся чёткие закономерности.';
+  else if(verdict==='good') tip='Совет: если такие сделки повторяются стабильно — это и есть твоя рабочая модель, держись её и не отклоняйся без веской причины.';
+  else tip='Совет: пересмотри эту сделку через день на свежую голову — часто в моменте риски не так заметны, как при спокойном разборе.';
+  return {verdict, good, risk, tip};
+}
+function renderTradeAnalysis(t){
+  const a=analyzeTrade(t);
+  const box=document.getElementById('lbAnalysis');
+  const meta={good:{label:'✅ Сделка в целом сильная',cls:'ta-good'},mixed:{label:'⚖️ Смешанный результат',cls:'ta-mixed'},risky:{label:'⚠️ Высокий риск в этой сделке',cls:'ta-risky'}}[a.verdict];
+  let html=`<div class="taHead ${meta.cls}">${meta.label}</div>`;
+  if(a.good.length){
+    html+=`<div class="taSection"><div class="taSectionTitle mint">Что сделано правильно</div>`+
+      a.good.map((g,i)=>`<div class="taItem good" style="animation-delay:${i*0.08}s"><span class="taIcon">✅</span><span>${g}</span></div>`).join('')+`</div>`;
+  }
+  if(a.risk.length){
+    html+=`<div class="taSection"><div class="taSectionTitle coral">Где был риск получить минус</div>`+
+      a.risk.map((r,i)=>`<div class="taItem risk" style="animation-delay:${(a.good.length+i)*0.08}s"><span class="taIcon">⚠️</span><span>${r}</span></div>`).join('')+`</div>`;
+  }
+  html+=`<div class="taTip"><span class="taTipIcon">💡</span><span>${a.tip}</span></div>`;
+  box.innerHTML=html;
+}
+
 /* lightbox */
 function openLightbox(t){
   const bp=document.getElementById('lbPaneBefore'), ap=document.getElementById('lbPaneAfter');
@@ -806,10 +978,11 @@ function openLightbox(t){
   document.getElementById('lbInfo').innerHTML=info.map(([l,v])=>`<div class="it"><b class="${l==='Итог P&L'?(p>=0?'mint':'coral'):''}">${v}</b><span>${l}</span></div>`).join('');
   const ovWrap=document.getElementById('lbOverlaps');
   if(t.overlaps && t.overlaps.length){
-    ovWrap.innerHTML='<b>Перекрытия (' + t.overlaps.length + '):</b> ' + t.overlaps.map((o,i)=>`#${i+1} $${o.stake} — ${o.result.toUpperCase()}`).join(' · ');
+    ovWrap.innerHTML='<b>Перекрытия (' + t.overlaps.length + '):</b> ' + t.overlaps.map((o,i)=>`#${i+1} $${o.stake} · ${o.expiry||'1м'} — ${o.result.toUpperCase()}`).join(' · ');
   } else { ovWrap.innerHTML=''; }
   const notesEl=document.getElementById('lbNotes');
   if(t.notes){ notesEl.style.display='block'; notesEl.textContent='Мой разбор графика: '+t.notes; } else notesEl.style.display='none';
+  renderTradeAnalysis(t);
   document.getElementById('lightbox').classList.add('open');
 }
 document.getElementById('lbClose').onclick=()=>document.getElementById('lightbox').classList.remove('open');
@@ -1287,6 +1460,7 @@ function showGoalCongrats(key, target){
   document.getElementById('goalCongratsSub').innerHTML='Ты набрал(а) запланированные <b>'+fmtMoney(target)+'</b>. Отличная дисциплина — так и держать!';
   document.getElementById('goalCongratsNext').textContent='Следующую цель на '+L.name+' можно будет отметить '+L.next+'.';
   overlay.querySelectorAll('.confettiPiece').forEach(el=>el.remove());
+  if(!appSettings.confetti){ overlay.classList.add('show'); return; }
   const colors=['#00e2a0','#f5b942','#6c8cff','#ff5a6e','#a56cff'];
   for(let i=0;i<70;i++){
     const p=document.createElement('div');
@@ -1401,6 +1575,7 @@ function populateFormFromTrade(t){
     if(!row) return;
     row.querySelector('.ov_stake').value=o.stake;
     row.querySelectorAll('.ov_res .resbtn').forEach(b=>b.classList.toggle('active', b.dataset.v===o.result));
+    row.querySelectorAll('.ov_expiry .chip').forEach(x=>x.classList.toggle('active', x.dataset.v===(o.expiry||'1м')));
   });
   curEmotion=t.emotion||EMOTIONS[0].l; updateEmoBtn();
   document.getElementById('f_notes').value=t.notes||'';
@@ -1435,7 +1610,8 @@ document.getElementById('cancelEditBtn').onclick=cancelEdit;
 document.getElementById('addBtn').onclick=()=>{
   const overlaps=[...document.querySelectorAll('#overlapRows .overlapRow')].map(row=>({
     stake: parseFloat(row.querySelector('.ov_stake').value)||0,
-    result: row.querySelector('.ov_res .resbtn.active').dataset.v
+    result: row.querySelector('.ov_res .resbtn.active').dataset.v,
+    expiry: row.querySelector('.ov_expiry .chip.active')?.dataset.v||'1м'
   }));
   const baseData={
     date:document.getElementById('f_date').value||new Date().toISOString().slice(0,10),
@@ -1465,6 +1641,7 @@ document.getElementById('addBtn').onclick=()=>{
     const t={ id:Date.now()+'_'+Math.random().toString(36).slice(2), ...baseData };
     trades.push(t); save();
     resetTradeForm();
+    clearDraft();
     render();
     showToast('✅ Сделка успешно записана');
   }
@@ -1479,7 +1656,7 @@ document.getElementById('aiBtn').onclick=async ()=>{
   if(trades.length<3){ out.textContent='Добавь хотя бы 3 сделки для анализа.'; return; }
   out.textContent='Анализирую сделки...';
   const data=trades.map(t=>({pair:t.pair,dir:t.direction,exp:t.expiry,stake:t.stake,payout:t.payout,result:t.result,
-    overlaps:(t.overlaps||[]).map(o=>({stake:o.stake,result:o.result})),
+    overlaps:(t.overlaps||[]).map(o=>({stake:o.stake,result:o.result,expiry:o.expiry||'1м'})),
     emotion:t.emotion,quality:t.quality||'не отмечено',notes:t.notes,date:t.date,time:t.time,weekday:DOW[weekdayIdx(t.date)],session:sessionFor(t.time).short,itogPnl:pnl(t)}));
   const prompt=`Ты — очень опытный, но простой в общении наставник по бинарным опционам на форекс. Объясняй всё максимально понятным, бытовым языком, без сложных терминов и названий стратегий (никаких "мартингейл" и подобных умных слов) — как будто говоришь с другом без опыта в трейдинге. При этом разбор должен быть подробным и по существу.
 
@@ -1504,7 +1681,7 @@ document.getElementById('errBtn').onclick=async ()=>{
   if(trades.length<3){ out.textContent='Добавь хотя бы 3 сделки для анализа.'; return; }
   out.textContent='Ищу повторяющиеся ошибки...';
   const data=trades.map(t=>({pair:t.pair,dir:t.direction,exp:t.expiry,stake:t.stake,payout:t.payout,result:t.result,
-    overlaps:(t.overlaps||[]).map(o=>({stake:o.stake,result:o.result})),
+    overlaps:(t.overlaps||[]).map(o=>({stake:o.stake,result:o.result,expiry:o.expiry||'1м'})),
     emotion:t.emotion,quality:t.quality||'не отмечено',notes:t.notes,date:t.date,time:t.time,weekday:DOW[weekdayIdx(t.date)],session:sessionFor(t.time).short,itogPnl:pnl(t)}));
   const prompt=`Ты — наставник по бинарным опционам на форекс, который говорит очень просто и по-дружески, без сложных терминов и названий стратегий.
 
@@ -1523,7 +1700,82 @@ ${JSON.stringify(data)}
   catch(e){ out.textContent='Не удалось получить разбор. Попробуй ещё раз.'; }
 };
 
+/* settings UI wiring (theme grid, toggles, drawer, draft autosave, quick repeat) */
+function renderThemeGrid(){
+  const grid=document.getElementById('themeGrid'); grid.innerHTML='';
+  Object.entries(THEMES).forEach(([key,theme])=>{
+    const el=document.createElement('div');
+    el.className='themeSwatch'+(key===appSettings.theme?' sel':'');
+    el.dataset.key=key;
+    el.innerHTML=`<div class="themePreview"><span style="background:${theme.vars['--bg']}"></span><span style="background:${theme.vars['--mint']}"></span><span style="background:${theme.vars['--accent']}"></span></div><div class="themeName">${theme.name}</div>`;
+    el.onclick=()=>applyTheme(key);
+    grid.appendChild(el);
+  });
+}
+renderThemeGrid();
+document.getElementById('toggleAnim').checked=appSettings.anim;
+document.getElementById('toggleConfetti').checked=appSettings.confetti;
+document.getElementById('toggleDraft').checked=appSettings.draft;
+document.getElementById('toggleAnim').onchange=e=>{ appSettings.anim=e.target.checked; saveSettings(); applyAnimSetting(); };
+document.getElementById('toggleConfetti').onchange=e=>{ appSettings.confetti=e.target.checked; saveSettings(); };
+document.getElementById('toggleDraft').onchange=e=>{ appSettings.draft=e.target.checked; saveSettings(); if(!appSettings.draft) clearDraft(); };
+function openSettings(){ document.getElementById('settingsOverlay').classList.add('open'); }
+function closeSettings(){ document.getElementById('settingsOverlay').classList.remove('open'); }
+document.getElementById('settingsBtn').onclick=openSettings;
+document.getElementById('settingsCloseBtn').onclick=closeSettings;
+document.getElementById('settingsOverlay').addEventListener('click', e=>{ if(e.target.id==='settingsOverlay') closeSettings(); });
+
+/* draft autosave — honest version of "auto-record": browsers can't read a broker's platform,
+   so this only protects data you've already typed from being lost, plus a one-click repeat of the last trade */
+function collectDraft(){
+  return { date:document.getElementById('f_date').value, time:document.getElementById('f_time').value,
+    pair:curPair, dir:curDir, expiry:curExp,
+    stake:document.getElementById('f_stake').value, payout:document.getElementById('f_payout').value,
+    notes:document.getElementById('f_notes').value };
+}
+function saveDraftIfEnabled(){
+  if(!appSettings.draft || editingId) return;
+  try{ localStorage.setItem('fxbo_draft_v1', JSON.stringify(collectDraft())); }catch(e){}
+}
+function clearDraft(){ try{ localStorage.removeItem('fxbo_draft_v1'); }catch(e){} }
+function restoreDraftIfAny(){
+  if(!appSettings.draft) return;
+  let d=null; try{ d=JSON.parse(localStorage.getItem('fxbo_draft_v1')); }catch(e){}
+  if(!d) return;
+  const hasContent=(d.notes&&d.notes.trim())||(d.stake&&d.stake!=='10')||(d.pair&&d.pair!=='EUR/USD')||(d.dir&&d.dir!=='call');
+  if(!hasContent) return;
+  document.getElementById('f_date').value=d.date||new Date().toISOString().slice(0,10);
+  document.getElementById('f_time').value=d.time||'';
+  document.getElementById('f_stake').value=d.stake||'10';
+  document.getElementById('f_payout').value=d.payout||'80';
+  document.getElementById('f_notes').value=d.notes||'';
+  curPair=d.pair||'EUR/USD'; updatePairBtn();
+  setDir(d.dir||'call');
+  curExp=d.expiry||'1м';
+  document.querySelectorAll('#expChips .chip').forEach(x=>x.classList.toggle('active', x.dataset.v===curExp));
+  showToast('📝 Черновик сделки восстановлен');
+}
+setInterval(()=>{
+  const newPanel=document.querySelector('.tabPanel[data-tab="new"]');
+  if(newPanel && newPanel.classList.contains('active')) saveDraftIfEnabled();
+}, 4000);
+
+document.getElementById('quickRepeatBtn').onclick=()=>{
+  if(!trades.length){ alert('Пока нет ни одной сделки для повтора.'); return; }
+  const last=trades[trades.length-1];
+  curPair=last.pair; updatePairBtn();
+  setDir(last.direction);
+  curExp=last.expiry;
+  document.querySelectorAll('#expChips .chip').forEach(x=>x.classList.toggle('active', x.dataset.v===curExp));
+  document.getElementById('f_stake').value=last.stake;
+  document.getElementById('f_payout').value=last.payout;
+  document.getElementById('f_date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('f_time').value='';
+  showToast('⚡ Данные последней сделки подставлены');
+};
+
 document.getElementById('f_date').value=new Date().toISOString().slice(0,10);
+restoreDraftIfAny();
 render();
 renderNews();
 </script>
