@@ -72,6 +72,7 @@ textarea{min-height:48px;resize:vertical;}
 .resbtn.loss.active{border-color:var(--coral);color:var(--coral);background:rgba(255,90,110,.1);}
 .resbtn.draw.active{border-color:var(--muted);color:var(--text);background:rgba(255,255,255,.06);}
 .overlapRow{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:end;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;padding:10px;margin-bottom:8px;animation:fadeUp .3s ease both;}
+.overlapRow .ovExpiryWrap{grid-column:1 / -1;}
 .ov_expiry{display:flex;gap:5px;flex-wrap:wrap;}
 .ov_expiry .chip{padding:6px 10px;font-size:11px;}
 .qualityBtns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
@@ -710,7 +711,7 @@ function save(){ try{ localStorage.setItem(KEY,JSON.stringify(trades)); }catch(e
 function ovPnl(o,payout){ return o.result==='win'? o.stake*payout/100 : (o.result==='loss'? -o.stake:0); }
 function pnl(t){
   let p = t.result==='win'? t.stake*t.payout/100 : (t.result==='loss'? -t.stake:0);
-  (t.overlaps||[]).forEach(o=>{ p+=ovPnl(o,t.payout); });
+  (t.overlaps||[]).forEach(o=>{ p+=ovPnl(o,o.payout||t.payout); });
   return p;
 }
 function fmt(n){ return (n>=0?'+':'')+n.toLocaleString('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:2}); }
@@ -754,10 +755,12 @@ document.querySelectorAll('#overlapChips .chip').forEach(c=>c.onclick=()=>{
 });
 function renderOverlapRows(){
   const wrap=document.getElementById('overlapRows'); wrap.innerHTML='';
+  const defPayout=parseFloat(document.getElementById('f_payout').value)||80;
   for(let i=0;i<overlapCount;i++){
     const row=document.createElement('div'); row.className='overlapRow';
     row.innerHTML=`<div><label>Перекрытие ${i+1} · ставка ($)</label><input type="number" step="any" class="ov_stake" value="10"></div>
-      <div><label>Экспирация перекрытия</label>
+      <div><label>Выплата (%)</label><input type="number" step="any" class="ov_payout" value="${defPayout}"></div>
+      <div class="ovExpiryWrap"><label>Экспирация перекрытия</label>
         <div class="chips ov_expiry">
           <div class="chip active" data-v="1м">1м</div><div class="chip" data-v="2м">2м</div>
           <div class="chip" data-v="3м">3м</div><div class="chip" data-v="4м">4м</div>
@@ -777,7 +780,16 @@ function renderOverlapRows(){
   wrap.querySelectorAll('.ov_expiry').forEach(group=>{
     group.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{ group.querySelectorAll('.chip').forEach(x=>x.classList.remove('active')); b.classList.add('active'); });
   });
+  wrap.querySelectorAll('.ov_payout').forEach(inp=>{
+    inp.addEventListener('input', ()=>{ inp.dataset.touched='1'; });
+  });
 }
+document.getElementById('f_payout').addEventListener('input', ()=>{
+  const v=document.getElementById('f_payout').value;
+  document.querySelectorAll('#overlapRows .ov_payout').forEach(inp=>{
+    if(!inp.dataset.touched) inp.value=v;
+  });
+});
 
 /* collapsibles */
 function toggleCollapsible(body,btn){
@@ -1003,7 +1015,7 @@ function openLightbox(t){
   document.getElementById('lbInfo').innerHTML=info.map(([l,v])=>`<div class="it"><b class="${l==='Итог P&L'?(p>=0?'mint':'coral'):''}">${v}</b><span>${l}</span></div>`).join('');
   const ovWrap=document.getElementById('lbOverlaps');
   if(t.overlaps && t.overlaps.length){
-    ovWrap.innerHTML='<b>Перекрытия (' + t.overlaps.length + '):</b> ' + t.overlaps.map((o,i)=>`#${i+1} $${o.stake} · ${o.expiry||'1м'} — ${o.result.toUpperCase()}`).join(' · ');
+    ovWrap.innerHTML='<b>Перекрытия (' + t.overlaps.length + '):</b> ' + t.overlaps.map((o,i)=>`#${i+1} $${o.stake} · ${o.payout||t.payout}% · ${o.expiry||'1м'} — ${o.result.toUpperCase()}`).join(' · ');
   } else { ovWrap.innerHTML=''; }
   const notesEl=document.getElementById('lbNotes');
   if(t.notes){ notesEl.style.display='block'; notesEl.textContent='Мой разбор графика: '+t.notes; } else notesEl.style.display='none';
@@ -1654,6 +1666,8 @@ function populateFormFromTrade(t){
     const row=document.querySelectorAll('#overlapRows .overlapRow')[i];
     if(!row) return;
     row.querySelector('.ov_stake').value=o.stake;
+    row.querySelector('.ov_payout').value=o.payout||t.payout;
+    if(o.payout&&o.payout!==t.payout) row.querySelector('.ov_payout').dataset.touched='1';
     row.querySelectorAll('.ov_res .resbtn').forEach(b=>b.classList.toggle('active', b.dataset.v===o.result));
     row.querySelectorAll('.ov_expiry .chip').forEach(x=>x.classList.toggle('active', x.dataset.v===(o.expiry||'1м')));
   });
@@ -1690,6 +1704,7 @@ document.getElementById('cancelEditBtn').onclick=cancelEdit;
 document.getElementById('addBtn').onclick=()=>{
   const overlaps=[...document.querySelectorAll('#overlapRows .overlapRow')].map(row=>({
     stake: parseFloat(row.querySelector('.ov_stake').value)||0,
+    payout: parseFloat(row.querySelector('.ov_payout').value)||0,
     result: row.querySelector('.ov_res .resbtn.active').dataset.v,
     expiry: row.querySelector('.ov_expiry .chip.active')?.dataset.v||'1м'
   }));
@@ -1736,7 +1751,7 @@ document.getElementById('aiBtn').onclick=async ()=>{
   if(trades.length<3){ out.textContent='Добавь хотя бы 3 сделки для анализа.'; return; }
   out.textContent='Анализирую сделки...';
   const data=trades.map(t=>({pair:t.pair,dir:t.direction,exp:t.expiry,stake:t.stake,payout:t.payout,result:t.result,
-    overlaps:(t.overlaps||[]).map(o=>({stake:o.stake,result:o.result,expiry:o.expiry||'1м'})),
+    overlaps:(t.overlaps||[]).map(o=>({stake:o.stake,payout:o.payout||t.payout,result:o.result,expiry:o.expiry||'1м'})),
     emotion:t.emotion,quality:t.quality||'не отмечено',notes:t.notes,date:t.date,time:t.time,weekday:DOW[weekdayIdx(t.date)],session:sessionFor(t.time).short,itogPnl:pnl(t)}));
   const prompt=`Ты — очень опытный, но простой в общении наставник по бинарным опционам на форекс. Объясняй всё максимально понятным, бытовым языком, без сложных терминов и названий стратегий (никаких "мартингейл" и подобных умных слов) — как будто говоришь с другом без опыта в трейдинге. При этом разбор должен быть подробным и по существу.
 
@@ -1761,7 +1776,7 @@ document.getElementById('errBtn').onclick=async ()=>{
   if(trades.length<3){ out.textContent='Добавь хотя бы 3 сделки для анализа.'; return; }
   out.textContent='Ищу повторяющиеся ошибки...';
   const data=trades.map(t=>({pair:t.pair,dir:t.direction,exp:t.expiry,stake:t.stake,payout:t.payout,result:t.result,
-    overlaps:(t.overlaps||[]).map(o=>({stake:o.stake,result:o.result,expiry:o.expiry||'1м'})),
+    overlaps:(t.overlaps||[]).map(o=>({stake:o.stake,payout:o.payout||t.payout,result:o.result,expiry:o.expiry||'1м'})),
     emotion:t.emotion,quality:t.quality||'не отмечено',notes:t.notes,date:t.date,time:t.time,weekday:DOW[weekdayIdx(t.date)],session:sessionFor(t.time).short,itogPnl:pnl(t)}));
   const prompt=`Ты — наставник по бинарным опционам на форекс, который говорит очень просто и по-дружески, без сложных терминов и названий стратегий.
 
