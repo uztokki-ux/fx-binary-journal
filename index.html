@@ -250,12 +250,25 @@ body{transition:background-color .4s ease,color .4s ease;}
 .newsWhy{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.55;}
 .newsWhy b{color:var(--text);}
 .newsMetaRow{display:flex;gap:16px;margin-top:2px;font-size:10.5px;color:var(--muted);flex-wrap:wrap;}
+.newsSubToggle{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;padding:9px 11px;border-radius:10px;background:rgba(108,140,255,.06);border:1px solid rgba(108,140,255,.2);cursor:pointer;transition:.2s;font-size:12px;font-weight:700;color:var(--accent);}
+.newsSubToggle:hover{background:rgba(108,140,255,.12);}
+.newsSubToggle .collToggle{pointer-events:none;color:inherit;}
+.newsSubToggle.viewpoints{background:rgba(245,185,66,.06);border-color:rgba(245,185,66,.25);color:#f5b942;}
+.newsSubToggle.viewpoints:hover{background:rgba(245,185,66,.12);}
+.aiOpinionText{font-size:12.5px;color:#dde3f0;line-height:1.6;padding:10px 12px;margin-top:6px;background:rgba(108,140,255,.05);border-left:2px solid var(--accent);border-radius:0 10px 10px 0;animation:fadeUp .3s ease both;}
+.viewpointItem{font-size:12px;color:var(--muted);line-height:1.55;padding:9px 11px;margin-top:6px;background:rgba(255,255,255,.02);border-radius:10px;border:1px solid var(--border);animation:fadeUp .3s ease both;}
+.viewpointNote{font-size:10px;color:var(--muted);opacity:.7;margin-top:8px;font-style:italic;line-height:1.4;}
 .newsMetaRow b{color:var(--text);font-weight:700;}
 .newsCurrBadge{font-size:9.5px;font-weight:800;padding:2px 8px;border-radius:8px;background:rgba(245,185,66,.15);color:#f5b942;letter-spacing:.3px;}
 .del{background:none;color:var(--coral);border:none;cursor:pointer;font-size:14px;transition:.15s;}
 .del:hover{transform:scale(1.2);}
 .viewBtn{background:none;color:var(--accent);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px;padding:3px 8px;transition:.15s;}
 .viewBtn:hover{border-color:var(--accent);background:rgba(108,140,255,.1);transform:translateY(-1px);}
+.analysisBadge{background:none;border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:14px;padding:3px 7px;transition:.15s;line-height:1;}
+.analysisBadge:hover{transform:translateY(-1px) scale(1.08);}
+.analysisBadge.ta-good{border-color:rgba(0,226,160,.4);background:rgba(0,226,160,.08);}
+.analysisBadge.ta-mixed{border-color:rgba(245,185,66,.4);background:rgba(245,185,66,.08);}
+.analysisBadge.ta-risky{border-color:rgba(255,90,110,.4);background:rgba(255,90,110,.08);}
 .empty{color:var(--muted);text-align:center;padding:22px;font-size:13px;}
 .aiBtn{background:linear-gradient(90deg,var(--accent),#a56cff);color:#fff;border:none;padding:13px 16px;border-radius:12px;font-weight:800;font-size:14.5px;cursor:pointer;width:100%;transition:.15s;}
 .aiBtn:hover{filter:brightness(1.1);transform:translateY(-1px);}
@@ -612,7 +625,7 @@ body{transition:background-color .4s ease,color .4s ease;}
   <div class="card tablewrap">
     <h2>История сделок</h2>
     <table>
-      <thead><tr><th>Дата</th><th>Время</th><th>Сессия</th><th>Пара</th><th>Напр.</th><th>Эксп.</th><th>Ставка</th><th>Перекр.</th><th>Рез.</th><th>Качество</th><th>P&L</th><th>Эмоция</th><th>Скрины</th><th></th></tr></thead>
+      <thead><tr><th>Дата</th><th>Время</th><th>Сессия</th><th>Пара</th><th>Напр.</th><th>Эксп.</th><th>Ставка</th><th>Перекр.</th><th>Рез.</th><th>Качество</th><th>P&L</th><th>Эмоция</th><th>Скрины</th><th>Анализ</th><th></th></tr></thead>
       <tbody id="tbody"></tbody>
     </table>
     <div class="empty" id="emptyMsg" style="display:none">Пока нет сделок — запиши первую выше.</div>
@@ -742,10 +755,12 @@ applyTheme(appSettings.theme);
 
 /* sound notifications — synthesized with Web Audio, no external files */
 const SOUND_TYPES={
-  chime:{name:'Колокольчик', notes:[659.25,987.77,1318.51]},
-  soft:{name:'Мягкий тон', notes:[523.25,659.25]},
-  coin:{name:'Монетка', notes:[988,1568,1976]},
-  chord:{name:'Аккорд успеха', notes:[523.25,659.25,783.99]}
+  chime:{name:'Колокольчик', notes:[659.25,987.77,1318.51], wave:'sine', gap:0.09},
+  soft:{name:'Мягкий тон', notes:[523.25,659.25], wave:'sine', gap:0.1},
+  coin:{name:'Монетка', notes:[988,1568,1976], wave:'square', gap:0.07},
+  chord:{name:'Аккорд успеха', notes:[523.25,659.25,783.99], wave:'sine', gap:0.09},
+  marimba:{name:'Маримба', notes:[440,554.37,659.25], wave:'triangle', gap:0.1},
+  rise:{name:'Восход', notes:[392,523.25,659.25,783.99], wave:'sine', gap:0.07}
 };
 let audioCtx=null;
 function getAudioCtx(){
@@ -758,11 +773,12 @@ function playChime(type, big){
   const ctx=getAudioCtx(); if(!ctx) return;
   const def=SOUND_TYPES[type]||SOUND_TYPES[appSettings.soundType]||SOUND_TYPES.chime;
   const notes=big? def.notes.concat(def.notes[def.notes.length-1]*2) : def.notes;
+  const gap=def.gap||0.09;
   const now=ctx.currentTime;
   notes.forEach((freq,i)=>{
     const osc=ctx.createOscillator(); const gain=ctx.createGain();
-    osc.type='sine'; osc.frequency.value=freq;
-    const start=now+i*0.09;
+    osc.type=def.wave||'sine'; osc.frequency.value=freq;
+    const start=now+i*gap;
     gain.gain.setValueAtTime(0,start);
     gain.gain.linearRampToValueAtTime(big?0.22:0.16,start+0.02);
     gain.gain.exponentialRampToValueAtTime(0.0001,start+0.7);
@@ -903,6 +919,19 @@ document.getElementById('f_payout').addEventListener('input', ()=>{
 });
 
 /* collapsibles */
+/* when a collapsible nested inside another (already-open) collapsible expands,
+   the ancestor's own max-height was fixed to its scrollHeight at the moment IT
+   opened and never grows again on its own — so newly-added child content gets
+   silently clipped. Freeing any open ancestor's max-height fixes that. */
+function freeOpenAncestors(body){
+  let p=body.parentElement;
+  while(p){
+    if(p.classList && p.classList.contains('collapsible') && !p.classList.contains('closed')){
+      p.style.maxHeight='none'; p.style.overflow='visible';
+    }
+    p=p.parentElement;
+  }
+}
 function toggleCollapsible(body,btn){
   if(body._toggleEnd){ body.removeEventListener('transitionend', body._toggleEnd); body._toggleEnd=null; }
   const isClosed=body.classList.contains('closed');
@@ -912,10 +941,12 @@ function toggleCollapsible(body,btn){
     const target=body.scrollHeight;
     body.style.maxHeight=target+'px';
     body.style.opacity='1';
+    freeOpenAncestors(body);
     const onEnd=(e)=>{
       if(e.propertyName==='max-height'){
         body.removeEventListener('transitionend', onEnd); body._toggleEnd=null;
         if(!body.classList.contains('closed')){ body.style.maxHeight='none'; body.style.overflow='visible'; }
+        freeOpenAncestors(body);
       }
     };
     body._toggleEnd=onEnd;
@@ -1147,7 +1178,11 @@ function analyzeTrade(t){
         good.push('Основная сделка и '+(ovCount===1?'перекрытие':ovCount+' перекрытия')+' закрылись в плюс — докрытие сработало как дополнительная прибыль, а не как спасение убытка, отличный результат.');
       } else {
         good.push('Основная сделка закрылась в плюс сама по себе, ещё до докрытий.');
-        risk.push((ovLosses===ovCount?'Все '+ovCount:ovLosses+' из '+ovCount)+' перекрыти'+(ovLosses===1?'е закрылось':'я закрылись')+' в минус — стоит подумать, были ли они вообще нужны при уже растущей основной сделке.');
+        let ovLossPhrase;
+        if(ovCount===1) ovLossPhrase='Перекрытие закрылось';
+        else if(ovLosses===ovCount) ovLossPhrase='Все '+ovCount+' перекрытия закрылись';
+        else ovLossPhrase=ovLosses+' из '+ovCount+' перекрытий закрылись';
+        risk.push(ovLossPhrase+' в минус — стоит подумать, были ли они вообще нужны при уже растущей основной сделке.');
       }
     } else {
       if(ovCount!==3) risk.push('Потребовалось докрытие ('+ovCount+') — основная сделка не сработала с первого раза, стоит присмотреться, что было не так с исходным входом.');
@@ -1218,10 +1253,13 @@ function render(){
   const tbody=document.getElementById('tbody'); tbody.innerHTML='';
   const sorted=[...trades].sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
   document.getElementById('emptyMsg').style.display=trades.length?'none':'block';
+  const ANALYSIS_ICON={good:'✅',mixed:'⚖️',risky:'⚠️'};
+  const ANALYSIS_TITLE={good:'Разбор: сделка сильная',mixed:'Разбор: смешанный результат',risky:'Разбор: высокий риск'};
   sorted.forEach(t=>{
     const p=pnl(t); const hasImg=t.imgBefore||t.imgAfter; const ovCount=(t.overlaps||[]).length;
     const tr=document.createElement('tr');
     const sess=sessionFor(t.time);
+    const verdict=analyzeTrade(t).verdict;
     tr.innerHTML=`<td>${t.date}</td><td>${t.time||''}</td><td><span class="badge sess">${sess.emoji} ${sess.short}</span></td><td>${t.pair}</td><td>${t.direction==='call'?'▲ CALL':'▼ PUT'}</td>
       <td>${t.expiry}</td><td>$${t.stake}</td>
       <td>${ovCount?`<span class="badge ov">${ovCount}×</span>`:'—'}</td>
@@ -1230,6 +1268,7 @@ function render(){
       <td class="${p>=0?'mint':'coral'}">${fmt(p)}</td>
       <td>${t.emotion}</td>
       <td>${hasImg?`<button class="viewBtn" data-view="${t.id}">👁 смотреть</button>`:'—'}</td>
+      <td><button class="analysisBadge ta-${verdict}" data-analysis="${t.id}" title="${ANALYSIS_TITLE[verdict]}">${ANALYSIS_ICON[verdict]}</button></td>
       <td><button class="editBtn" data-edit="${t.id}">✏️</button><button class="del" data-id="${t.id}">✕</button></td>`;
     tbody.appendChild(tr);
   });
@@ -1240,6 +1279,7 @@ function render(){
   });
   document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{ const t=trades.find(x=>x.id===b.dataset.edit); if(t) startEdit(t); });
   document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{ const t=trades.find(x=>x.id===b.dataset.view); if(t) openLightbox(t); });
+  document.querySelectorAll('[data-analysis]').forEach(b=>b.onclick=()=>{ const t=trades.find(x=>x.id===b.dataset.analysis); if(t) openLightbox(t); });
   renderStats(sorted); renderWeekday(sorted); renderCalendar(sorted); renderSessions(sorted); renderHourHeatmap(sorted); renderExpiry(sorted); renderQuality(sorted); renderGoals();
 }
 
@@ -1361,70 +1401,70 @@ function renderExpiry(sorted){
 }
 
 const NEWS_EVENTS=[
-  {icon:'💼',title:'NFP — рынок труда США (за сентябрь)',date:'2026-10-02',impact:'Высокая',curr:'USD',
+  {icon:'💼',title:'NFP — рынок труда США (за сентябрь)',date:'2026-10-02',time:'15:30',impact:'Высокая',curr:'USD',
     up:'Рабочих мест создано БОЛЬШЕ прогноза',down:'Рабочих мест создано МЕНЬШЕ прогноза',
     why:'Крепкий рынок труда — значит экономика США сильна, и ФРС может дольше держать высокую ставку. Это привлекает капитал в доллар, и он растёт (EUR/USD падает). Слабые данные говорят об обратном.',
     move:'Одна из самых резких реакций рынка — движение 0.3–1% за первые 15–30 минут',
     longterm:'Несколько плохих отчётов подряд обычно и запускают смену тренда на недели вперёд',
     tip:'Первые 1–2 минуты после публикации часто дают ложный резкий скачок в обе стороны — это "шпильку" перебивают крупные роботы. Разумнее дождаться закрытия первой минутной свечи и входить по направлению её закрепления, а не по первому импульсу.',
     pairs:'GBP/USD, USD/JPY, USD/CHF, USD/CAD, AUD/USD — двигаются вместе с EUR/USD, так как реагируют на силу самого доллара'},
-  {icon:'📊',title:'CPI США (инфляция за сентябрь)',date:'2026-10-14',impact:'Высокая',curr:'USD',
+  {icon:'📊',title:'CPI США (инфляция за сентябрь)',date:'2026-10-14',time:'15:30',impact:'Высокая',curr:'USD',
     up:'Инфляция ВЫШЕ прогноза',down:'Инфляция НИЖЕ прогноза',
     why:'Высокая инфляция означает, что ФРС, скорее всего, будет держать ставку высокой дольше (или даже повышать) — доллар растёт. Низкая инфляция открывает дорогу к снижению ставки — доллар слабеет.',
     move:'Обычно 0.3–0.7% в течение часа после выхода данных',
     longterm:'Одно из ключевых данных для решений ФРС — задаёт настроение рынку на весь месяц',
     tip:'Смотри не только на общий CPI, но и на "базовую" (core) инфляцию без еды и топлива — рынок часто реагирует именно на неё. Если общий и базовый показатель расходятся в разные стороны, движение может быть рваным — короткие экспирации тут рискованнее обычного.',
     pairs:'GBP/USD, USD/JPY, USD/CHF, USD/CAD, AUD/USD'},
-  {icon:'🏦',title:'FOMC — решение по ставке ФРС США',date:'2026-10-28',impact:'Высокая',curr:'USD',
+  {icon:'🏦',title:'FOMC — решение по ставке ФРС США',date:'2026-10-28',time:'21:00',impact:'Высокая',curr:'USD',
     up:'Ставку повышают или тон жёсткий (намёк на новые повышения)',down:'Ставку снижают или тон мягкий',
     why:'Более высокая ставка в США делает доллар выгоднее для инвесторов (выше доходность по вкладам и облигациям) — доллар растёт. Мягкая политика — наоборот, доллар слабеет.',
     move:'Самая сильная волатильность дня — часто 0.5–1.5%, особенно во время пресс-конференции главы ФРС',
     longterm:'Задаёт тренд на месяцы вперёд — один из главных факторов силы доллара вообще',
     tip:'Само решение по ставке и пресс-конференция главы ФРС (обычно через 30 минут) — это по сути два разных новостных события: рынок может развернуться дважды за час. Если не уверен в направлении, лучше пропустить этот день, чем гадать с короткой экспирацией.',
     pairs:'GBP/USD, USD/JPY, USD/CHF, USD/CAD, AUD/USD — самая широкая реакция среди всех новостей'},
-  {icon:'🇪🇺',title:'ЕЦБ — решение по ставке для евро',date:'2026-10-29',impact:'Высокая',curr:'EUR',
+  {icon:'🇪🇺',title:'ЕЦБ — решение по ставке для евро',date:'2026-10-29',time:'15:45',impact:'Высокая',curr:'EUR',
     up:'Ставку повышают или намёк на дальнейшее ужесточение',down:'Ставку снижают или тон мягкий',
     why:'Та же логика, только для евро: чем выше ставка в еврозоне — тем евро привлекательнее для инвесторов, и он растёт против доллара. Мягкая политика ЕЦБ ослабляет евро.',
     move:'0.4–1% в течение часа, особенно на пресс-конференции главы ЕЦБ',
     longterm:'ЕЦБ обычно двигается медленнее ФРС, эффект более плавный, но задаёт направление на месяцы',
     tip:'Часто более показательна не сама ставка (её обычно угадывают заранее), а тон пресс-конференции — если глава ЕЦБ говорит жёстче или мягче, чем ждал рынок, движение может начаться с задержкой в 10–20 минут после самого решения.',
     pairs:'EUR/GBP, EUR/JPY, EUR/CHF, EUR/CAD, EUR/AUD'},
-  {icon:'📊',title:'CPI США (инфляция за октябрь)',date:'2026-11-10',impact:'Высокая',curr:'USD',
+  {icon:'📊',title:'CPI США (инфляция за октябрь)',date:'2026-11-10',time:'15:30',impact:'Высокая',curr:'USD',
     up:'Инфляция ВЫШЕ прогноза',down:'Инфляция НИЖЕ прогноза',
     why:'Так же, как и с сентябрьским отчётом: высокая инфляция — доллар крепче, низкая — доллар слабее.',
     move:'Обычно 0.3–0.7% в течение часа после выхода данных',
     longterm:'Одно из ключевых данных для решений ФРС',
     tip:'Сравни свежую цифру не только с прогнозом, но и с прошлым месяцем — если тренд по инфляции разворачивается (например, третий месяц подряд снижается), рынок может реагировать сильнее, чем на разовое отклонение от прогноза.',
     pairs:'GBP/USD, USD/JPY, USD/CHF, USD/CAD, AUD/USD'},
-  {icon:'💼',title:'NFP — рынок труда США (за октябрь)',date:'2026-11-06',impact:'Высокая',curr:'USD',
+  {icon:'💼',title:'NFP — рынок труда США (за октябрь)',date:'2026-11-06',time:'15:30',impact:'Высокая',curr:'USD',
     up:'Рабочих мест создано БОЛЬШЕ прогноза',down:'Рабочих мест создано МЕНЬШЕ прогноза',
     why:'Крепкий рынок труда — доллар растёт, слабый — доллар слабеет (та же логика, что и в сентябрьском отчёте).',
     move:'Движение 0.3–1% за первые 15–30 минут',
     longterm:'Несколько отчётов подряд в одну сторону обычно и меняют тренд',
     tip:'Обрати внимание на пересмотр данных за предыдущий месяц (revision) — иногда именно он двигает рынок сильнее, чем свежая цифра, особенно если старые данные заметно понижают.',
     pairs:'GBP/USD, USD/JPY, USD/CHF, USD/CAD, AUD/USD'},
-  {icon:'📈',title:'Еврозона — предварительная инфляция (CPI)',date:'2026-10-31',impact:'Средняя',curr:'EUR',
+  {icon:'📈',title:'Еврозона — предварительная инфляция (CPI)',date:'2026-10-31',time:'12:00',impact:'Средняя',curr:'EUR',
     up:'Инфляция в еврозоне ВЫШЕ прогноза',down:'Инфляция НИЖЕ прогноза',
     why:'Высокая инфляция повышает шанс, что ЕЦБ будет держать ставку высокой дольше — евро растёт. Низкая — наоборот, ЕЦБ может смягчить политику, евро слабеет.',
     move:'Реакция мягче, чем на американские данные — обычно 0.2–0.5%',
     longterm:'Влияет на ожидания рынка по следующему заседанию ЕЦБ',
     tip:'Это предварительная (flash) оценка — через 2–3 недели выйдет финальная цифра, которая обычно почти не отличается, поэтому вторая реакция рынка слабее. Основное движение стоит ждать именно на этой, предварительной публикации.',
     pairs:'EUR/GBP, EUR/JPY, EUR/CHF'},
-  {icon:'🏦',title:'FOMC — решение по ставке ФРС США',date:'2026-12-09',impact:'Высокая',curr:'USD',
+  {icon:'🏦',title:'FOMC — решение по ставке ФРС США',date:'2026-12-09',time:'21:00',impact:'Высокая',curr:'USD',
     up:'Ставку повышают или тон жёсткий',down:'Ставку снижают или тон мягкий',
     why:'Такая же логика, что и в октябре: жёсткая политика ФРС — доллар крепче, мягкая — слабее.',
     move:'Часто 0.5–1.5%, особенно на пресс-конференции',
     longterm:'Один из главных факторов силы доллара на месяцы вперёд',
     tip:'Декабрьское заседание часто сопровождается обновлённым прогнозом ФРС на следующий год (точечный график ставок) — реакция рынка может продолжаться дольше обычного, весь оставшийся день.',
     pairs:'GBP/USD, USD/JPY, USD/CHF, USD/CAD, AUD/USD'},
-  {icon:'📊',title:'CPI США (инфляция за ноябрь)',date:'2026-12-10',impact:'Высокая',curr:'USD',
+  {icon:'📊',title:'CPI США (инфляция за ноябрь)',date:'2026-12-10',time:'15:30',impact:'Высокая',curr:'USD',
     up:'Инфляция ВЫШЕ прогноза',down:'Инфляция НИЖЕ прогноза',
     why:'Высокая инфляция — доллар крепче, низкая — доллар слабее.',
     move:'Обычно 0.3–0.7% в течение часа',
     longterm:'Ключевые данные для решений ФРС',
     tip:'Выходит за день до заседания ФРС — если цифра сильно отклоняется от прогноза, рынок может уже начать закладывать реакцию на ФРС заранее, и движение по обеим новостям сольётся в одно.',
     pairs:'GBP/USD, USD/JPY, USD/CHF, USD/CAD, AUD/USD'},
-  {icon:'🇪🇺',title:'ЕЦБ — решение по ставке для евро',date:'2026-12-17',impact:'Высокая',curr:'EUR',
+  {icon:'🇪🇺',title:'ЕЦБ — решение по ставке для евро',date:'2026-12-17',time:'15:45',impact:'Высокая',curr:'EUR',
     up:'Ставку повышают или тон жёсткий',down:'Ставку снижают или тон мягкий',
     why:'Жёсткая политика ЕЦБ — евро крепче, мягкая — слабее.',
     move:'0.4–1% в течение часа, особенно на пресс-конференции',
@@ -1453,7 +1493,7 @@ function generateRecurringNews(weeksAhead){
   // еженедельные заявки на пособие по безработице в США — каждый четверг
   let thu=nextWeekday(today,4);
   while(thu<=end){
-    events.push({icon:'📄',title:'Заявки на пособие по безработице (США, за неделю)',date:isoDate(thu),impact:'Средняя',curr:'USD',
+    events.push({icon:'📄',title:'Заявки на пособие по безработице (США, за неделю)',date:isoDate(thu),time:'15:30',impact:'Средняя',curr:'USD',
       up:'Заявок МЕНЬШЕ прогноза (рынок труда крепче)',down:'Заявок БОЛЬШЕ прогноза (рынок труда слабее)',
       why:'Быстрый еженедельный индикатор здоровья рынка труда США между крупными отчётами NFP. Меньше заявок — рынок труда крепкий, доллар растёт. Больше заявок — рынок труда слабеет, доллар может снижаться.',
       move:'Реакция умеренная, обычно 0.1–0.3%',
@@ -1467,28 +1507,28 @@ function generateRecurringNews(weeksAhead){
   while(cur<=end){
     const y=cur.getFullYear(), m=cur.getMonth();
     const ismMfg=nthBusinessDay(y,m,1);
-    if(ismMfg>=today && ismMfg<=end) events.push({icon:'🏭',title:'Индекс деловой активности в производстве США (ISM Manufacturing)',date:isoDate(ismMfg),impact:'Средняя',curr:'USD',
+    if(ismMfg>=today && ismMfg<=end) events.push({icon:'🏭',title:'Индекс деловой активности в производстве США (ISM Manufacturing)',date:isoDate(ismMfg),time:'17:00',impact:'Средняя',curr:'USD',
       up:'Индекс ВЫШЕ прогноза (сектор растёт)',down:'Индекс НИЖЕ прогноза (сектор слабеет)',
       why:'Значение выше 50 пунктов говорит о росте производственного сектора США, ниже 50 — о спаде. Данные лучше прогноза укрепляют доллар, хуже — ослабляют.',
       move:'Обычно 0.2–0.5%',longterm:'Задаёт настроение по доллару на начало месяца, особенно если расходится с ожиданиями',
       tip:'Выходит в первый рабочий день месяца. Хорошая точка, чтобы свериться с общим трендом по доллару перед новым месяцем.',
       pairs:'GBP/USD, USD/JPY, USD/CAD'});
     const ismSvc=nthBusinessDay(y,m,3);
-    if(ismSvc>=today && ismSvc<=end) events.push({icon:'🏢',title:'Индекс деловой активности в услугах США (ISM Services)',date:isoDate(ismSvc),impact:'Средняя',curr:'USD',
+    if(ismSvc>=today && ismSvc<=end) events.push({icon:'🏢',title:'Индекс деловой активности в услугах США (ISM Services)',date:isoDate(ismSvc),time:'17:00',impact:'Средняя',curr:'USD',
       up:'Индекс ВЫШЕ прогноза (сектор растёт)',down:'Индекс НИЖЕ прогноза (сектор слабеет)',
       why:'Сектор услуг — крупнейшая часть экономики США, поэтому этот индекс часто важнее производственного. Значение выше 50 — рост, ниже 50 — спад.',
       move:'Обычно 0.2–0.6%, иногда сильнее ISM Manufacturing',longterm:'Может ощутимо скорректировать ожидания рынка по следующему решению ФРС',
       tip:'Выходит на третий рабочий день месяца. Если данные сильно расходятся с ISM Manufacturing, жди более рваного движения — рынку нужно время определиться с реакцией.',
       pairs:'GBP/USD, USD/JPY, USD/CAD'});
     const retail=nearestWeekday(y,m,15);
-    if(retail>=today && retail<=end) events.push({icon:'🛒',title:'Розничные продажи в США',date:isoDate(retail),impact:'Средняя',curr:'USD',
+    if(retail>=today && retail<=end) events.push({icon:'🛒',title:'Розничные продажи в США',date:isoDate(retail),time:'15:30',impact:'Средняя',curr:'USD',
       up:'Продажи ВЫШЕ прогноза',down:'Продажи НИЖЕ прогноза',
       why:'Розничные продажи показывают, сколько тратят потребители, а потребление — основная часть экономики США. Сильные продажи укрепляют доллар, слабые — ослабляют.',
       move:'Обычно 0.2–0.5%',longterm:'Несколько слабых отчётов подряд могут усилить ожидания снижения ставки ФРС',
       tip:'Смотри отдельно на показатель без учёта автомобилей (core retail sales) — он часто точнее отражает реальный потребительский спрос.',
       pairs:'GBP/USD, USD/JPY, USD/CAD'});
     const euPmi=nearestWeekday(y,m,24);
-    if(euPmi>=today && euPmi<=end) events.push({icon:'📈',title:'Предварительный индекс деловой активности еврозоны (PMI Flash)',date:isoDate(euPmi),impact:'Средняя',curr:'EUR',
+    if(euPmi>=today && euPmi<=end) events.push({icon:'📈',title:'Предварительный индекс деловой активности еврозоны (PMI Flash)',date:isoDate(euPmi),time:'11:00',impact:'Средняя',curr:'EUR',
       up:'Индекс ВЫШЕ прогноза (экономика растёт)',down:'Индекс НИЖЕ прогноза (экономика слабеет)',
       why:'Совокупный индекс по производству и услугам еврозоны. Выше 50 — расширение экономики, ниже 50 — спад. Хорошие данные укрепляют евро.',
       move:'Обычно 0.2–0.4%',longterm:'Один из ориентиров для ЕЦБ при выборе денежно-кредитной политики',
@@ -1499,16 +1539,82 @@ function generateRecurringNews(weeksAhead){
   return events;
 }
 
+/* countdown precision grows as the event gets closer — days, then days+hours, then hours+minutes, then minutes */
+function formatCountdown(target, now){
+  const diffMs=target-now;
+  if(diffMs<=0) return {label:'Уже вышла', cls:''};
+  const totalMin=Math.floor(diffMs/60000);
+  const days=Math.floor(totalMin/1440);
+  const hours=Math.floor((totalMin%1440)/60);
+  const mins=totalMin%60;
+  let label;
+  if(days>=3) label='через '+days+' дн.';
+  else if(days>=1) label='через '+days+' дн. '+hours+' ч.';
+  else if(hours>=1) label='через '+hours+' ч. '+mins+' мин.';
+  else label='через '+mins+' мин.';
+  const cls=totalMin<=60?'coral':(days<1?'#f5b942':(days<=5?'#f5b942':'mint'));
+  return {label, cls};
+}
+
+/* deterministic "AI opinion" per event — composed from the event's own data (impact, direction logic,
+   typical move, trading tip), not a live model call, so it works identically for every reader */
+const AI_OPENERS=['Если оценивать это событие как трейдер: ','Мой взгляд на это событие: ','Коротко о том, чего ждать: ','С точки зрения вероятного сценария: ','Если разбирать по существу: '];
+function newsSeed(e){ return hueFor(e.title+e.date+e.time); }
+function aiNewsOpinion(e){
+  const opener=AI_OPENERS[newsSeed(e)%AI_OPENERS.length];
+  const volPhrase=e.impact==='Высокая'
+    ? 'ожидаю заметный всплеск волатильности в первые минуты после публикации — движения на таких новостях обычно самые резкие за день'
+    : 'реакция, скорее всего, будет умеренной и без резких скачков, но направление может задать настроение на ближайшие дни';
+  const upShort=e.up.charAt(0).toLowerCase()+e.up.slice(1);
+  const downShort=e.down.charAt(0).toLowerCase()+e.down.slice(1);
+  const focusPhrase='Главное — насколько цифра разойдётся с прогнозом рынка: '+upShort+' обычно толкает пару в одну сторону, а '+downShort+' — в противоположную; сам факт совпадения с прогнозом обычно почти не двигает рынок.';
+  const stratPhrase=e.tip ? 'Из практики: '+e.tip : '';
+  return opener+volPhrase+'. '+focusPhrase+(stratPhrase?' '+stratPhrase:'');
+}
+
+/* generic, unattributed trader considerations — not real live comments from real people,
+   just common takes seen in practice, picked per event for variety */
+const VIEWPOINT_POOL=[
+  'Часть трейдеров вообще не входит в первые минуты после публикации — слишком много ложных импульсов, которые быстро откатываются.',
+  'Более агрессивный подход — ловить самый первый импульс на минимальной ставке, сознательно принимая риск ложного движения.',
+  'Осторожный вариант — дождаться закрытия первой минутной свечи и входить по направлению её закрепления, теряя скорость входа ради точности.',
+  'Некоторые пропускают день таких новостей целиком и просто наблюдают за реакцией рынка, не считая это рабочим временем для бинарных опционов.',
+  'Есть мнение, что стоит сократить размер ставки как минимум вдвое именно на новостях — независимо от того, насколько уверенно выглядит сетап.',
+  'Часть трейдеров ориентируется не на саму цифру, а на то, как быстро рынок "переваривает" новость — если движение быстро откатывается, это сигнал не преследовать цену.',
+  'Некоторые предпочитают торговать не саму публикацию, а отложенную реакцию через 15–20 минут, когда исчезают самые резкие ложные движения.',
+  'Есть подход торговать не по направлению первого движения, а против него — ставка на то, что рынок сначала перегибает, а потом возвращается.'
+];
+function newsViewpoints(e){
+  const seed=newsSeed(e);
+  const n=VIEWPOINT_POOL.length;
+  const i1=seed%n, i2=(seed+3)%n, i3=(seed+6)%n;
+  const idxs=[...new Set([i1,i2,i3])].slice(0,3);
+  return idxs.map(i=>VIEWPOINT_POOL[i]);
+}
+
+let newsUpcomingCache=[];
+function updateNewsCountdowns(){
+  const now=new Date();
+  newsUpcomingCache.forEach((e,i)=>{
+    const el=document.querySelector(`[data-newscountdown="${i}"]`);
+    if(!el) return;
+    const c=formatCountdown(e.d, now);
+    el.textContent=c.label;
+    el.className='newsCountdown'+(c.cls==='mint'||c.cls==='coral'?' '+c.cls:'');
+    el.style.color=c.cls==='#f5b942'?'#f5b942':'';
+  });
+}
+setInterval(updateNewsCountdowns, 60000);
+
 function renderNews(){
   const box=document.getElementById('newsList');
   const now=new Date();
   const allEvents=[...NEWS_EVENTS, ...generateRecurringNews(6)];
-  const upcoming=allEvents.map(e=>({...e,d:new Date(e.date+'T12:00:00')})).filter(e=>e.d>=new Date(now.toDateString())).sort((a,b)=>a.d-b.d).slice(0,14);
+  const upcoming=allEvents.map(e=>({...e,d:new Date(e.date+'T'+(e.time||'12:00')+':00')})).filter(e=>e.d>=now || (new Date(e.date+'T23:59:59'))>=now).sort((a,b)=>a.d-b.d).slice(0,14);
+  newsUpcomingCache=upcoming;
   if(!upcoming.length){ box.innerHTML='<div class="empty">Ближайших событий не найдено.</div>'; return; }
   box.innerHTML=upcoming.map((e,i)=>{
-    const days=Math.round((e.d-now)/(1000*60*60*24));
-    const label=days<=0?'Сегодня':(days===1?'Завтра':'через '+days+' дн.');
-    const col=days<=1?'coral':(days<=5?'#f5b942':'mint');
+    const c=formatCountdown(e.d, now);
     const isUsd=e.curr==='USD';
     const upEffect=isUsd?'EUR/USD ⬇':'EUR/USD ⬆';
     const downEffect=isUsd?'EUR/USD ⬆':'EUR/USD ⬇';
@@ -1517,8 +1623,8 @@ function renderNews(){
     return `<div class="newsCard" style="animation-delay:${i*0.06}s">
       <div class="newsItem newsClickable" data-newshead="${i}">
         <div class="newsIcon">${e.icon}</div>
-        <div class="newsBody"><div class="newsTitle">${e.title}</div><div class="newsDate">${e.d.toLocaleDateString('ru-RU',{day:'2-digit',month:'long',year:'numeric'})}</div></div>
-        <div class="newsRight"><div class="newsCountdown ${col==='mint'||col==='coral'?col:''}" style="${col==='#f5b942'?'color:#f5b942':''}">${label}</div><div class="newsImpact">${e.impact} важность</div></div>
+        <div class="newsBody"><div class="newsTitle">${e.title}</div><div class="newsDate">${e.d.toLocaleDateString('ru-RU',{day:'2-digit',month:'long',year:'numeric'})}, ${e.time||'—'} МСК</div></div>
+        <div class="newsRight"><div class="newsCountdown ${c.cls==='mint'||c.cls==='coral'?c.cls:''}" style="${c.cls==='#f5b942'?'color:#f5b942':''}" data-newscountdown="${i}">${c.label}</div><div class="newsImpact">${e.impact} важность</div></div>
         <button type="button" class="collToggle closed" id="newsChev${i}" tabindex="-1">▾</button>
       </div>
       <div class="collapsible closed" id="newsDetail${i}">
@@ -1530,6 +1636,13 @@ function renderNews(){
           <div class="newsMetaRow"><span><b>Долгосрочно:</b> ${e.longterm}</span></div>
           ${e.tip?`<div class="newsWhy">💡 <b>Как торговать:</b> ${e.tip}</div>`:''}
           ${e.pairs?`<div class="newsMetaRow"><span><b>Также затронет:</b> ${e.pairs}</span></div>`:''}
+          <div class="newsSubToggle ai" data-aitoggle="${i}"><span>🤖 Мнение ИИ — чего ждать от этой новости</span><span class="collToggle closed" id="newsAiChev${i}">▾</span></div>
+          <div class="collapsible closed" id="newsAiBody${i}"><div class="aiOpinionText">${aiNewsOpinion(e)}</div></div>
+          <div class="newsSubToggle viewpoints" data-vptoggle="${i}"><span>💬 Другие точки зрения трейдеров</span><span class="collToggle closed" id="newsVpChev${i}">▾</span></div>
+          <div class="collapsible closed" id="newsVpBody${i}">
+            ${newsViewpoints(e).map((v,vi)=>`<div class="viewpointItem" style="animation-delay:${vi*0.08}s">${v}</div>`).join('')}
+            <div class="viewpointNote">Обобщённые наблюдения из практики торговли на новостях, а не сообщения реальных людей в реальном времени.</div>
+          </div>
         </div>
       </div>
     </div>`;
@@ -1539,6 +1652,14 @@ function renderNews(){
     const detail=document.getElementById('newsDetail'+i);
     const chev=document.getElementById('newsChev'+i);
     head.onclick=()=>{ const willOpen=detail.classList.contains('closed'); toggleCollapsible(detail,chev); head.closest('.newsCard').classList.toggle('expanded', willOpen); };
+    const aiHead=box.querySelector(`[data-aitoggle="${i}"]`);
+    const aiBody=document.getElementById('newsAiBody'+i);
+    const aiChev=document.getElementById('newsAiChev'+i);
+    aiHead.onclick=(ev)=>{ ev.stopPropagation(); toggleCollapsible(aiBody,aiChev); };
+    const vpHead=box.querySelector(`[data-vptoggle="${i}"]`);
+    const vpBody=document.getElementById('newsVpBody'+i);
+    const vpChev=document.getElementById('newsVpChev'+i);
+    vpHead.onclick=(ev)=>{ ev.stopPropagation(); toggleCollapsible(vpBody,vpChev); };
   });
 }
 
