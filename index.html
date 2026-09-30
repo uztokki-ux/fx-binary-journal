@@ -112,6 +112,12 @@ tbody tr:hover{background:rgba(255,255,255,.03)}
 .sessTimeMsk{color:var(--muted);font-weight:500;font-size:9.5px;text-transform:uppercase;}
 .sessWr{font-size:22px;font-weight:800;margin-top:2px;font-variant-numeric:tabular-nums;}
 .sessRow{display:flex;justify-content:space-between;font-size:10.5px;color:var(--muted);margin-top:6px;}
+.simSubhead{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin-bottom:10px;}
+.simDaysRow{color:var(--muted);font-size:10px;justify-content:flex-start;opacity:.85;}
+.simGoalCard{margin-top:16px;background:linear-gradient(135deg,rgba(165,108,255,.12),rgba(108,140,255,.08));border:1px solid rgba(165,108,255,.35);border-radius:14px;padding:13px 15px;font-size:12.5px;line-height:1.6;color:#eef1f7;animation:fadeUp .3s ease both;}
+.simGoalCard b{color:var(--mint);}
+.simGoalCard.warn{border-color:rgba(255,90,110,.4);background:linear-gradient(135deg,rgba(255,90,110,.12),rgba(255,90,110,.05));}
+.simGoalCard.warn b{color:var(--coral);}
 .sessBar{height:6px;border-radius:4px;background:#1c212c;overflow:hidden;margin-top:9px;}
 .sessBar .fill{height:100%;border-radius:4px;width:0%;transition:width 1s cubic-bezier(.22,1,.36,1);}
 .goalGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;}
@@ -178,6 +184,13 @@ tbody tr:hover{background:rgba(255,255,255,.03)}
 .themeName{font-size:10px;color:var(--text);font-weight:700;}
 .settingsToggleRow{display:flex;align-items:center;justify-content:space-between;padding:10px 0;font-size:12.5px;color:#dde3f0;border-bottom:1px solid var(--border);}
 .settingsToggleRow:last-child{border-bottom:none;}
+.soundGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;}
+.soundSwatch{display:flex;align-items:center;justify-content:space-between;gap:6px;border-radius:12px;padding:9px 11px;cursor:pointer;border:2px solid var(--border);transition:.2s;background:rgba(255,255,255,.02);}
+.soundSwatch:hover{transform:translateY(-2px);}
+.soundSwatch.sel{border-color:var(--accent);box-shadow:0 0 0 3px rgba(108,140,255,.2);}
+.soundSwatch .soundName{font-size:11.5px;color:var(--text);font-weight:600;}
+.soundPlayBtn{width:24px;height:24px;border-radius:50%;border:1px solid var(--border);background:rgba(255,255,255,.05);color:var(--text);display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer;flex:none;transition:.15s;}
+.soundPlayBtn:hover{background:var(--accent);border-color:var(--accent);color:#fff;transform:scale(1.1);}
 .switch{position:relative;display:inline-block;width:42px;height:24px;flex:none;}
 .switch input{opacity:0;width:0;height:0;}
 .switch .slider{position:absolute;cursor:pointer;inset:0;background:#2a3140;border-radius:24px;transition:.25s;}
@@ -434,17 +447,31 @@ body{transition:background-color .4s ease,color .4s ease;}
       <div><label>Средняя ставка ($)</label><input type="number" step="any" id="sim_stake" value="10"></div>
       <div><label>Винрейт (%)</label><input type="number" step="any" id="sim_winrate" value="60"></div>
       <div><label>Выплата (%)</label><input type="number" step="any" id="sim_payout" value="80"></div>
+      <div><label>Сделок в день</label><input type="number" step="any" id="sim_perday" value="5"></div>
+      <div><label>Цель по балансу ($)</label><input type="number" step="any" id="sim_target" value="1000"></div>
     </div>
     <div class="chips">
       <div class="chip" id="simAutoBtn" style="border-color:var(--accent);color:var(--accent);">📥 Взять статистику из дневника</div>
     </div>
     <button class="submit" id="simRunBtn" style="background:linear-gradient(90deg,var(--accent),#a56cff);color:#fff;">▶ Построить прогноз</button>
     <div id="simResults" style="margin-top:18px;">
+
+      <div class="simSubhead">📐 Твоя математика на сделку</div>
       <div class="sessGrid">
-        <div class="sessTile"><div class="sessName">Через 50 сделок</div><div class="sessWr mint" id="sim0">—</div><div class="sessRow"><span>рост баланса</span><span id="simGrowth0">—</span></div></div>
-        <div class="sessTile"><div class="sessName">Через 200 сделок</div><div class="sessWr mint" id="sim1">—</div><div class="sessRow"><span>рост баланса</span><span id="simGrowth1">—</span></div></div>
-        <div class="sessTile"><div class="sessName">Через 500 сделок</div><div class="sessWr mint" id="sim2">—</div><div class="sessRow"><span>рост баланса</span><span id="simGrowth2">—</span></div></div>
+        <div class="sessTile"><div class="sessName">Мат. ожидание / сделку</div><div class="sessWr" id="simEV">—</div></div>
+        <div class="sessTile"><div class="sessName">Риск на сделку</div><div class="sessWr" id="simRisk">—</div></div>
+        <div class="sessTile"><div class="sessName">5 убытков подряд</div><div class="sessWr coral" id="simStreak5">—</div></div>
       </div>
+
+      <div class="simSubhead" style="margin-top:16px;">🚀 Прогноз баланса</div>
+      <div class="sessGrid">
+        <div class="sessTile"><div class="sessName">Через 50 сделок</div><div class="sessWr mint" id="sim0">—</div><div class="sessRow"><span>рост баланса</span><span id="simGrowth0">—</span></div><div class="sessRow simDaysRow"><span id="simDays0"></span></div></div>
+        <div class="sessTile"><div class="sessName">Через 200 сделок</div><div class="sessWr mint" id="sim1">—</div><div class="sessRow"><span>рост баланса</span><span id="simGrowth1">—</span></div><div class="sessRow simDaysRow"><span id="simDays1"></span></div></div>
+        <div class="sessTile"><div class="sessName">Через 500 сделок</div><div class="sessWr mint" id="sim2">—</div><div class="sessRow"><span>рост баланса</span><span id="simGrowth2">—</span></div><div class="sessRow simDaysRow"><span id="simDays2"></span></div></div>
+      </div>
+
+      <div class="simGoalCard" id="simGoalCard">🎯 <span id="simGoalText">Укажи цель по балансу и нажми «Построить прогноз»</span></div>
+
       <div class="chartWrap" style="margin-top:16px;"><canvas id="simChart"></canvas></div>
       <div class="shotNote" style="margin-top:12px;">Это математическая проекция на основе твоего винрейта и риска на сделку (ставка ÷ депозит, применяется к растущему балансу — эффект сложного процента). Реальный рынок не гарантирует стабильный винрейт — это инструмент для мотивации и планирования, а не финансовая гарантия.</div>
     </div>
@@ -634,6 +661,19 @@ body{transition:background-color .4s ease,color .4s ease;}
         <span>💾 Автосохранение черновика новой сделки</span>
         <label class="switch"><input type="checkbox" id="toggleDraft" checked><span class="slider"></span></label>
       </div>
+      <div class="settingsToggleRow">
+        <span>⚠️ Подтверждать удаление сделки</span>
+        <label class="switch"><input type="checkbox" id="toggleConfirmDelete" checked><span class="slider"></span></label>
+      </div>
+    </div>
+
+    <div class="settingsSection">
+      <div class="settingsLabel">🔊 Звук</div>
+      <div class="settingsToggleRow">
+        <span>🔔 Звуковое оповещение</span>
+        <label class="switch"><input type="checkbox" id="toggleSound" checked><span class="slider"></span></label>
+      </div>
+      <div class="soundGrid" id="soundGrid"></div>
     </div>
 
     <div class="settingsNote">💡 Полностью автоматическая запись сделок прямо с брокера технически невозможна в браузерном дневнике — сайт не имеет доступа к торговой площадке. Зато есть два рабочих способа ускорить ввод: кнопка «⚡ Повторить последнюю сделку» в форме новой сделки заполняет пару/направление/ставку в один клик, а автосохранение черновика (выше) не даст потерять уже введённые данные, если случайно закроешь вкладку.</div>
@@ -664,7 +704,7 @@ const THEMES={
   violet:{name:'Фиолет',vars:{'--bg':'#0f0a1a','--panel':'#181026','--panel2':'#201432','--border':'#332249','--text':'#f2edfa','--muted':'#8b7ba3','--mint':'#22e2a0','--coral':'#ff6b9d','--accent':'#a56cff'}}
 };
 const SETTINGS_KEY='fxbo_settings_v1';
-let appSettings={theme:'dark', anim:true, confetti:true, draft:true};
+let appSettings={theme:'dark', anim:true, confetti:true, draft:true, sound:true, soundType:'chime', confirmDelete:true};
 try{ const s=JSON.parse(localStorage.getItem(SETTINGS_KEY)); if(s) appSettings=Object.assign(appSettings,s); }catch(e){}
 function saveSettings(){ try{ localStorage.setItem(SETTINGS_KEY, JSON.stringify(appSettings)); }catch(e){} }
 function applyTheme(key){
@@ -675,6 +715,37 @@ function applyTheme(key){
 }
 function applyAnimSetting(){ document.documentElement.classList.toggle('noAnim', !appSettings.anim); }
 applyTheme(appSettings.theme);
+
+/* sound notifications — synthesized with Web Audio, no external files */
+const SOUND_TYPES={
+  chime:{name:'Колокольчик', notes:[659.25,987.77,1318.51]},
+  soft:{name:'Мягкий тон', notes:[523.25,659.25]},
+  coin:{name:'Монетка', notes:[988,1568,1976]},
+  chord:{name:'Аккорд успеха', notes:[523.25,659.25,783.99]}
+};
+let audioCtx=null;
+function getAudioCtx(){
+  if(!audioCtx){ try{ audioCtx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ audioCtx=null; } }
+  if(audioCtx && audioCtx.state==='suspended'){ audioCtx.resume().catch(()=>{}); }
+  return audioCtx;
+}
+function playChime(type, big){
+  if(!appSettings.sound) return;
+  const ctx=getAudioCtx(); if(!ctx) return;
+  const def=SOUND_TYPES[type]||SOUND_TYPES[appSettings.soundType]||SOUND_TYPES.chime;
+  const notes=big? def.notes.concat(def.notes[def.notes.length-1]*2) : def.notes;
+  const now=ctx.currentTime;
+  notes.forEach((freq,i)=>{
+    const osc=ctx.createOscillator(); const gain=ctx.createGain();
+    osc.type='sine'; osc.frequency.value=freq;
+    const start=now+i*0.09;
+    gain.gain.setValueAtTime(0,start);
+    gain.gain.linearRampToValueAtTime(big?0.22:0.16,start+0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001,start+0.7);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(start); osc.stop(start+0.75);
+  });
+}
 applyAnimSetting();
 
 const KEY='fxbo_trades_v4';
@@ -952,6 +1023,68 @@ const RISKY_EMOTIONS={
   'Сомнение':'Отмечено состояние сомнения — если не было уверенности в сетапе, вход стоило пропустить.'
 };
 const CALM_EMOTIONS=['Спокойствие','Уверенность'];
+function tradeSeed(t){ return hueFor((t.id||'')+(t.date||'')+(t.time||'')+(t.pair||'')+(t.result||'')); }
+function pickVariant(t,arr,salt){ if(arr.length===1) return arr[0]; const seed=(tradeSeed(t)+ (salt||0)*17)%arr.length; return arr[Math.abs(seed)%arr.length]; }
+
+const RISKY_TIPS={
+  'Месть за убыток':[
+    'Совет: перед следующим входом в состоянии «месть за убыток» сделай паузу минимум 5 минут и заново сверься с чек-листом своей стратегии.',
+    'Совет: заведи правило — после убыточной сделки минимум одна пропущенная свеча перед новым входом, чтобы не входить на эмоциях.',
+    'Совет: попробуй физически отойти от экрана на пару минут после убытка — «месть» обычно требует именно немедленного действия, и разрыв этого паттерна снижает импульсивность.'
+  ],
+  'Азарт/жадность':[
+    'Совет: заранее фиксируй максимальный размер ставки на сделку и не меняй его в моменте, каким бы уверенным ни казался вход на азарте.',
+    'Совет: если чувствуешь азарт — сократи ставку вдвое от обычной, а не увеличивай её. Азарт искажает оценку риска сильнее, чем кажется.',
+    'Совет: поставь себе дневной лимит числа сделок — азарт чаще всего толкает на лишние входы сверх плана, а не на качественные.'
+  ],
+  'Страх':[
+    'Совет: если вход делается на страхе — сначала дождись закрытия текущей свечи и подтверждения сетапа, а не входи на опережение.',
+    'Совет: страх часто говорит о том, что размер ставки для тебя психологически великоват — попробуй снизить его до комфортного уровня.',
+    'Совет: пропиши заранее план на "плохой сценарий" — часто страх уходит, когда знаешь, что будешь делать при убытке.'
+  ],
+  'Скука/от нечего делать':[
+    'Совет: сделки от скуки редко совпадают с рабочими сетапами — заведи правило «нет сетапа — нет сделки», даже если руки чешутся.',
+    'Совет: если тянет войти просто от скуки — сделай паузу и открой историю сделок, посмотри статистику по таким входам за месяц.',
+    'Совет: попробуй заранее определять «часы простоя» в течение дня и заполнять их не сделками, а анализом рынка.'
+  ],
+  'Сомнение':[
+    'Совет: если перед входом есть сомнение — это чаще всего сигнал пропустить сделку, а не входить «на всякий случай».',
+    'Совет: заведи короткий чек-лист из 3 пунктов сетапа — сомнение обычно исчезает, если все пункты выполнены явно.',
+    'Совет: сомнение — не всегда плохо, но действуй только если можешь чётко объяснить себе, откуда именно оно взялось.'
+  ]
+};
+const MISTAKE_TIPS=[
+  'Совет: выпиши конкретное правило, которое было нарушено в этот раз — и держи его на видном месте перед следующей сессией.',
+  'Совет: заведи короткий «стоп-лист» из 2-3 своих типичных ошибок и сверяйся с ним перед каждым входом ближайшую неделю.',
+  'Совет: вернись к этой сделке через пару дней и распиши по шагам, в какой момент стоило остановиться — так паттерн виднее.'
+];
+const OV3_TIPS=[
+  'Совет: заранее реши максимальное число докрытий на сделку и не отступай от него — это главный щит для депозита.',
+  'Совет: три докрытия подряд — это уже управление серией, а не отдельной сделкой; попробуй фиксировать такие серии отдельно в заметках.',
+  'Совет: если цепочка из 3 перекрытий повторяется часто — пересмотри процент выплаты и размер базовой ставки в риск-менеджменте.'
+];
+const NO_NOTES_TIPS=[
+  'Совет: возьми за привычку в паре слов фиксировать, почему вошёл в сделку — через 20–30 записей появятся чёткие закономерности.',
+  'Совет: даже одно слово в заметке («по тренду», «на новостях», «отбой от уровня») сильно облегчает разбор истории позже.',
+  'Совет: попробуй в течение недели описывать не результат, а именно причину входа — это самая полезная информация для будущего анализа.'
+];
+const GOOD_TIPS=[
+  'Совет: если такие сделки повторяются стабильно — это и есть твоя рабочая модель, держись её и не отклоняйся без веской причины.',
+  'Совет: сохрани скриншот этой сделки как образец «как надо» — полезно пересматривать перед началом торговой сессии.',
+  'Совет: отметь для себя, что именно совпало в этой сделке (время, пара, состояние) — и старайся чаще воспроизводить эти условия.',
+  'Совет: хорошие сделки тоже стоит разбирать — не только на «что пошло не так», но и на «что сработало и почему».'
+];
+const MIXED_TIPS=[
+  'Совет: пересмотри эту сделку через день на свежую голову — часто в моменте риски не так заметны, как при спокойном разборе.',
+  'Совет: раздели для себя эту сделку на «вход» и «управление позицией» — иногда вход был верным, а решение по докрытиям стоит пересмотреть отдельно.',
+  'Совет: если сомневаешься в оценке — сравни эту сделку с похожими за последний месяц в истории, паттерн обычно виден на 3-4 примерах.'
+];
+const DOUBLE_WIN_TIPS=[
+  'Совет: если перекрытие срабатывает в плюс вместе с основной сделкой регулярно — подумай, не выгоднее ли иногда обходиться без него и не платить лишней ставкой.',
+  'Совет: отметь для себя ситуации, где докрытие оказалось бонусом, а не страховкой — это ценный паттерн, который стоит уметь заранее отличать.',
+  'Совет: двойной плюс — это удача рынка, а не гарантия стратегии; не начинай закладывать такой исход в риск-менеджмент как норму.'
+];
+
 function analyzeTrade(t){
   const p=pnl(t);
   const good=[], risk=[];
@@ -961,13 +1094,26 @@ function analyzeTrade(t){
   else if(t.quality==='mistake'){ risk.push('Сделка отмечена как «🚨 Слив/Ошибка» — сам факт, что ты это заметил, уже хороший знак, но стоит разобрать, что заставило нарушить план.'); }
   if(CALM_EMOTIONS.includes(t.emotion)){ good.push('Состояние на входе — «'+t.emotion+'» — спокойный настрой снижает шанс импульсивного решения.'); }
   else if(RISKY_EMOTIONS[t.emotion]){ risk.push(RISKY_EMOTIONS[t.emotion]); }
+  let doubleWin=false;
   if(ovCount===0){
     if(t.result==='win') good.push('Сделка закрылась в плюс без единого докрытия — чистый результат по плану, без лишнего риска на депозит.');
   } else {
-    if(ovCount===3) risk.push('Использованы все 3 перекрытия подряд — это самая тяжёлая для депозита цепочка; серии из 3+ убытков подряд случаются регулярно, и депозит был близко к серьёзной просадке.');
-    else risk.push('Потребовалось докрытие ('+ovCount+') — основная сделка не сработала с первого раза, стоит присмотреться, что было не так с исходным входом.');
-    if(p>0) good.push('Несмотря на убыточный старт, докрытия вывели сделку в итоговый плюс — риск в моменте был под контролем.');
-    else risk.push('Докрытия не спасли ситуацию — вся серия закрылась в минус, в таком раскладе иногда лучше было остановиться раньше.');
+    const ovWins=overlaps.filter(o=>o.result==='win').length;
+    const ovLosses=overlaps.filter(o=>o.result==='loss').length;
+    if(ovCount===3) risk.push('Использованы все 3 перекрытия подряд — это самая тяжёлая для депозита цепочка, риск был велик независимо от итога.');
+    if(t.result==='win'){
+      if(ovLosses===0){
+        doubleWin=true;
+        good.push('Основная сделка и '+(ovCount===1?'перекрытие':ovCount+' перекрытия')+' закрылись в плюс — докрытие сработало как дополнительная прибыль, а не как спасение убытка, отличный результат.');
+      } else {
+        good.push('Основная сделка закрылась в плюс сама по себе, ещё до докрытий.');
+        risk.push((ovLosses===ovCount?'Все '+ovCount:ovLosses+' из '+ovCount)+' перекрыти'+(ovLosses===1?'е закрылось':'я закрылись')+' в минус — стоит подумать, были ли они вообще нужны при уже растущей основной сделке.');
+      }
+    } else {
+      if(ovCount!==3) risk.push('Потребовалось докрытие ('+ovCount+') — основная сделка не сработала с первого раза, стоит присмотреться, что было не так с исходным входом.');
+      if(p>0) good.push('Несмотря на убыточный старт, докрытия вывели сделку в итоговый плюс — риск в моменте был под контролем.');
+      else risk.push('Докрытия не спасли ситуацию — вся серия закрылась в минус, в таком раскладе иногда лучше было остановиться раньше.');
+    }
   }
   if(t.notes && t.notes.trim()){ good.push('Записан разбор графика — по таким заметкам легче находить закономерности между сделками.'); }
   else { risk.push('Заметка по сделке не заполнена — без разбора сложнее понять, почему был именно такой вход, когда будешь пересматривать историю позже.'); }
@@ -976,12 +1122,13 @@ function analyzeTrade(t){
   if(risk.length>=2 || (t.quality==='mistake' && p<0)) verdict='risky';
   else if(risk.length===1) verdict='mixed';
   let tip;
-  if(RISKY_EMOTIONS[t.emotion]) tip='Совет: перед следующим входом в похожем состоянии («'+t.emotion+'») сделай паузу минимум 5 минут и заново сверься с чек-листом своей стратегии.';
-  else if(t.quality==='mistake') tip='Совет: выпиши конкретное правило, которое было нарушено в этот раз — и держи его на видном месте перед следующей сессией.';
-  else if(ovCount===3) tip='Совет: заранее реши максимальное число докрытий на сделку и не отступай от него — это главный щит для депозита.';
-  else if(!t.notes || !t.notes.trim()) tip='Совет: возьми за привычку в паре слов фиксировать, почему вошёл в сделку — через 20–30 записей появятся чёткие закономерности.';
-  else if(verdict==='good') tip='Совет: если такие сделки повторяются стабильно — это и есть твоя рабочая модель, держись её и не отклоняйся без веской причины.';
-  else tip='Совет: пересмотри эту сделку через день на свежую голову — часто в моменте риски не так заметны, как при спокойном разборе.';
+  if(RISKY_EMOTIONS[t.emotion]) tip=pickVariant(t,RISKY_TIPS[t.emotion],1);
+  else if(t.quality==='mistake') tip=pickVariant(t,MISTAKE_TIPS,2);
+  else if(ovCount===3) tip=pickVariant(t,OV3_TIPS,3);
+  else if(doubleWin) tip=pickVariant(t,DOUBLE_WIN_TIPS,4);
+  else if(!t.notes || !t.notes.trim()) tip=pickVariant(t,NO_NOTES_TIPS,5);
+  else if(verdict==='good') tip=pickVariant(t,GOOD_TIPS,6);
+  else tip=pickVariant(t,MIXED_TIPS,7);
   return {verdict, good, risk, tip};
 }
 function renderTradeAnalysis(t){
@@ -1046,7 +1193,7 @@ function render(){
       <td><button class="editBtn" data-edit="${t.id}">✏️</button><button class="del" data-id="${t.id}">✕</button></td>`;
     tbody.appendChild(tr);
   });
-  document.querySelectorAll('.del').forEach(b=>b.onclick=()=>{ if(editingId===b.dataset.id) cancelEdit(); trades=trades.filter(t=>t.id!==b.dataset.id);save();render();});
+  document.querySelectorAll('.del').forEach(b=>b.onclick=()=>{ if(appSettings.confirmDelete && !confirm('Удалить эту сделку? Действие необратимо.')) return; if(editingId===b.dataset.id) cancelEdit(); trades=trades.filter(t=>t.id!==b.dataset.id);save();render();});
   document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{ const t=trades.find(x=>x.id===b.dataset.edit); if(t) startEdit(t); });
   document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{ const t=trades.find(x=>x.id===b.dataset.view); if(t) openLightbox(t); });
   renderStats(sorted); renderWeekday(sorted); renderCalendar(sorted); renderSessions(sorted); renderHourHeatmap(sorted); renderExpiry(sorted); renderQuality(sorted); renderGoals();
@@ -1403,21 +1550,61 @@ function runSimulation(){
   const stake=parseFloat(document.getElementById('sim_stake').value)||0;
   const winRatePct=parseFloat(document.getElementById('sim_winrate').value)||0;
   const payout=parseFloat(document.getElementById('sim_payout').value)||0;
+  const perDay=parseFloat(document.getElementById('sim_perday').value)||0;
+  const target=parseFloat(document.getElementById('sim_target').value)||0;
   if(deposit<=0||stake<=0){ alert('Укажи депозит и среднюю ставку больше нуля.'); return; }
   const winRate=Math.min(Math.max(winRatePct/100,0),1);
-  const risk=Math.min(stake/deposit,0.5);
+  const rawRisk=stake/deposit;
+  const risk=Math.min(rawRisk,0.5);
   const m=winRate*(1+risk*payout/100)+(1-winRate)*(1-risk);
   const points=[]; for(let n=0;n<=500;n+=10){ points.push({n,bal:deposit*Math.pow(m,n)}); }
   if(points[points.length-1].n!==500) points.push({n:500,bal:deposit*Math.pow(m,500)});
   renderSimChart(points);
+
+  /* risk & expectancy tiles */
+  const ev=winRate*(stake*payout/100)+(1-winRate)*(-stake);
+  const evEl=document.getElementById('simEV');
+  evEl.textContent=(ev>=0?'+':'')+fmtMoney(ev);
+  evEl.className='sessWr '+(ev>=0?'mint':'coral');
+  const riskEl=document.getElementById('simRisk');
+  riskEl.textContent=(rawRisk*100).toFixed(1)+'%';
+  riskEl.className='sessWr '+(rawRisk>0.05?'coral':(rawRisk>0.02?'':'mint'));
+  const streak5=Math.pow(1-winRate,5)*100;
+  document.getElementById('simStreak5').textContent=streak5.toFixed(1)+'%';
+
   [50,200,500].forEach((n,i)=>{
     const bal=deposit*Math.pow(m,n);
     const growth=(bal/deposit-1)*100;
     animateMoney(document.getElementById('sim'+i),bal);
     const gEl=document.getElementById('simGrowth'+i);
-    gEl.textContent=(growth>=0?'+':'')+growth.toFixed(0)+'%';
+    gEl.textContent=(growth>=0?'+':'')+growth.toFixed(0)+'%'+' ('+(bal-deposit>=0?'+':'')+fmtMoney(bal-deposit)+')';
     gEl.className=growth>=0?'mint':'coral';
+    const daysEl=document.getElementById('simDays'+i);
+    if(perDay>0){
+      const days=Math.ceil(n/perDay);
+      const weeks=(days/7).toFixed(1);
+      daysEl.textContent='≈ '+days+' дн. (~'+weeks+' нед.) при '+perDay+'/день';
+    } else daysEl.textContent='';
   });
+
+  /* goal card */
+  const goalCard=document.getElementById('simGoalCard');
+  const goalText=document.getElementById('simGoalText');
+  if(target>deposit && m>1){
+    const nGoal=Math.log(target/deposit)/Math.log(m);
+    const nGoalR=Math.ceil(nGoal);
+    let text='При текущей математике баланс <b>'+fmtMoney(target)+'</b> достигается примерно через <b>'+nGoalR+' сделок</b>';
+    if(perDay>0){ const days=Math.ceil(nGoalR/perDay); text+=' — это ~'+days+' дн. (~'+(days/7).toFixed(1)+' нед.) при '+perDay+' сделках в день'; }
+    text+='.';
+    goalText.innerHTML=text;
+    goalCard.classList.remove('warn');
+  } else if(target<=deposit){
+    goalText.innerHTML='Цель <b>'+fmtMoney(target)+'</b> уже ниже текущего депозита — можно поставить цель побольше.';
+    goalCard.classList.remove('warn');
+  } else {
+    goalText.innerHTML='При таком винрейте и риске баланс в среднем не растёт (математическое ожидание ≤ 0) — цель <b>'+fmtMoney(target)+'</b> недостижима без изменения риска или винрейта.';
+    goalCard.classList.add('warn');
+  }
 }
 document.getElementById('simAutoBtn').onclick=autoFillSim;
 document.getElementById('simRunBtn').onclick=runSimulation;
@@ -1552,6 +1739,7 @@ function showGoalCongrats(key, target){
   document.getElementById('goalCongratsSub').innerHTML='Ты набрал(а) запланированные <b>'+fmtMoney(target)+'</b>. Отличная дисциплина — так и держать!';
   document.getElementById('goalCongratsNext').textContent='Следующую цель на '+L.name+' можно будет отметить '+L.next+'.';
   overlay.querySelectorAll('.confettiPiece').forEach(el=>el.remove());
+  playChime(appSettings.soundType, true);
   if(!appSettings.confetti){ overlay.classList.add('show'); return; }
   const colors=['#00e2a0','#f5b942','#6c8cff','#ff5a6e','#a56cff'];
   for(let i=0;i<70;i++){
@@ -1732,6 +1920,7 @@ document.getElementById('addBtn').onclick=()=>{
     resetTradeForm(true);
     render();
     showToast('✅ Изменения сохранены');
+    playChime(appSettings.soundType);
   } else {
     const t={ id:Date.now()+'_'+Math.random().toString(36).slice(2), ...baseData };
     trades.push(t); save();
@@ -1739,6 +1928,7 @@ document.getElementById('addBtn').onclick=()=>{
     clearDraft();
     render();
     showToast('✅ Сделка успешно записана');
+    playChime(appSettings.soundType);
   }
 };
 
@@ -1808,12 +1998,29 @@ function renderThemeGrid(){
   });
 }
 renderThemeGrid();
+function renderSoundGrid(){
+  const grid=document.getElementById('soundGrid'); grid.innerHTML='';
+  Object.entries(SOUND_TYPES).forEach(([key,s])=>{
+    const el=document.createElement('div');
+    el.className='soundSwatch'+(key===appSettings.soundType?' sel':'');
+    el.dataset.key=key;
+    el.innerHTML=`<span class="soundName">${s.name}</span><span class="soundPlayBtn" title="Прослушать">▶</span>`;
+    el.querySelector('.soundName').onclick=()=>{ appSettings.soundType=key; saveSettings(); renderSoundGrid(); playChime(key); };
+    el.querySelector('.soundPlayBtn').onclick=(ev)=>{ ev.stopPropagation(); playChime(key); };
+    grid.appendChild(el);
+  });
+}
+renderSoundGrid();
 document.getElementById('toggleAnim').checked=appSettings.anim;
 document.getElementById('toggleConfetti').checked=appSettings.confetti;
 document.getElementById('toggleDraft').checked=appSettings.draft;
+document.getElementById('toggleSound').checked=appSettings.sound;
+document.getElementById('toggleConfirmDelete').checked=appSettings.confirmDelete;
 document.getElementById('toggleAnim').onchange=e=>{ appSettings.anim=e.target.checked; saveSettings(); applyAnimSetting(); };
 document.getElementById('toggleConfetti').onchange=e=>{ appSettings.confetti=e.target.checked; saveSettings(); };
 document.getElementById('toggleDraft').onchange=e=>{ appSettings.draft=e.target.checked; saveSettings(); if(!appSettings.draft) clearDraft(); };
+document.getElementById('toggleSound').onchange=e=>{ appSettings.sound=e.target.checked; saveSettings(); if(appSettings.sound) playChime(appSettings.soundType); };
+document.getElementById('toggleConfirmDelete').onchange=e=>{ appSettings.confirmDelete=e.target.checked; saveSettings(); };
 function openSettings(){ document.getElementById('settingsOverlay').classList.add('open'); }
 function closeSettings(){ document.getElementById('settingsOverlay').classList.remove('open'); }
 document.getElementById('settingsBtn').onclick=openSettings;
