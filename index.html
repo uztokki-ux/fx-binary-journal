@@ -162,6 +162,19 @@ tbody tr:hover{background:rgba(255,255,255,.03)}
 .goalCongratsClose{margin-top:18px;padding:11px 22px;border-radius:12px;border:none;background:linear-gradient(90deg,var(--mint),#00c48c);color:#04140f;font-weight:800;font-size:13px;cursor:pointer;transition:.2s;}
 .goalCongratsClose:hover{filter:brightness(1.08);transform:translateY(-1px);}
 .confettiPiece{position:absolute;top:-12px;width:9px;height:14px;opacity:.95;border-radius:2px;animation:confettiFall linear forwards;will-change:transform;z-index:1;}
+
+/* generic confirm overlay */
+.confirmOverlay{position:fixed;inset:0;background:rgba(4,6,10,.7);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;z-index:85;padding:20px;}
+.confirmOverlay.show{display:flex;}
+.confirmCard{background:linear-gradient(165deg,#161a24,#0d1017);border:1px solid rgba(255,90,110,.35);border-radius:22px;padding:30px 28px;max-width:340px;width:100%;text-align:center;box-shadow:0 30px 80px rgba(0,0,0,.55),0 0 0 1px rgba(255,90,110,.08);animation:congratsPop .4s cubic-bezier(.22,1.4,.36,1) both;}
+.confirmIcon{font-size:40px;line-height:1;}
+.confirmMsg{font-size:13.5px;color:#dde3f0;margin-top:10px;line-height:1.55;}
+.confirmBtns{display:flex;gap:10px;margin-top:20px;}
+.confirmBtns button{flex:1;padding:11px 14px;border-radius:12px;border:none;font-weight:800;font-size:12.5px;cursor:pointer;transition:.2s;}
+.confirmCancel{background:rgba(255,255,255,.08);color:var(--text);}
+.confirmCancel:hover{background:rgba(255,255,255,.14);}
+.confirmYes{background:linear-gradient(90deg,var(--coral),#e0435a);color:#fff;}
+.confirmYes:hover{filter:brightness(1.1);transform:translateY(-1px);}
 @keyframes confettiFall{0%{transform:translateY(0) translateX(0) rotate(0deg);opacity:1;}100%{transform:translateY(420px) translateX(var(--drift,0px)) rotate(var(--spin,540deg));opacity:0;}}
 
 /* settings drawer */
@@ -638,6 +651,17 @@ body{transition:background-color .4s ease,color .4s ease;}
   </div>
 </div>
 
+<div class="confirmOverlay" id="confirmOverlay">
+  <div class="confirmCard">
+    <div class="confirmIcon">⚠️</div>
+    <div class="confirmMsg" id="confirmMsg"></div>
+    <div class="confirmBtns">
+      <button type="button" class="confirmCancel" id="confirmCancelBtn">Отмена</button>
+      <button type="button" class="confirmYes" id="confirmYesBtn">Удалить</button>
+    </div>
+  </div>
+</div>
+
 <div class="settingsOverlay" id="settingsOverlay">
   <div class="settingsPanel" id="settingsPanel">
     <div class="settingsHead"><h3>⚙️ Настройки дневника</h3><button type="button" class="settingsCloseBtn" id="settingsCloseBtn">✕</button></div>
@@ -778,7 +802,7 @@ function sessionFor(time){
 let curPair='EUR/USD', curEmotion=EMOTIONS[0].l;
 let imgBeforeData=null, imgAfterData=null, hoveredShot=null;
 
-function save(){ try{ localStorage.setItem(KEY,JSON.stringify(trades)); }catch(e){ alert('Не удалось сохранить сделку — в браузере закончилось место (обычно из-за скринов). Удали несколько старых сделок со скринами.'); } }
+function save(){ try{ localStorage.setItem(KEY,JSON.stringify(trades)); }catch(e){ showToast('⚠️ Не удалось сохранить — в браузере закончилось место (обычно из-за скринов)'); } }
 function ovPnl(o,payout){ return o.result==='win'? o.stake*payout/100 : (o.result==='loss'? -o.stake:0); }
 function pnl(t){
   let p = t.result==='win'? t.stake*t.payout/100 : (t.result==='loss'? -t.stake:0);
@@ -789,6 +813,22 @@ function fmt(n){ return (n>=0?'+':'')+n.toLocaleString('ru-RU',{minimumFractionD
 function hueFor(str){ let h=0; for(const c of str) h=(h*31+c.charCodeAt(0))%360; return h; }
 function iconBg(p){ const h=hueFor(p); return `linear-gradient(135deg,hsl(${h},80%,55%),hsl(${(h+40)%360},80%,40%))`; }
 function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(window._tt); window._tt=setTimeout(()=>t.classList.remove('show'),2400); }
+
+/* custom in-app confirm dialog — native window.confirm() can be blocked/disabled
+   inside a sandboxed iframe (e.g. the Claude Artifact viewer), which silently
+   makes confirm() return false and breaks the calling action. This dialog
+   works everywhere and matches the app's own visual style. */
+function showConfirm(msg, onYes){
+  const overlay=document.getElementById('confirmOverlay');
+  document.getElementById('confirmMsg').textContent=msg;
+  overlay.classList.add('show');
+  const yesBtn=document.getElementById('confirmYesBtn');
+  const cancelBtn=document.getElementById('confirmCancelBtn');
+  function cleanup(){ overlay.classList.remove('show'); yesBtn.onclick=null; cancelBtn.onclick=null; overlay.onclick=null; }
+  yesBtn.onclick=()=>{ cleanup(); onYes(); };
+  cancelBtn.onclick=cleanup;
+  overlay.onclick=(e)=>{ if(e.target===overlay) cleanup(); };
+}
 
 function animateNum(el,to,prefix,decimals){
   const from=parseFloat(el.dataset.val||'0'); const dur=600,t0=performance.now();
@@ -1193,7 +1233,11 @@ function render(){
       <td><button class="editBtn" data-edit="${t.id}">✏️</button><button class="del" data-id="${t.id}">✕</button></td>`;
     tbody.appendChild(tr);
   });
-  document.querySelectorAll('.del').forEach(b=>b.onclick=()=>{ if(appSettings.confirmDelete && !confirm('Удалить эту сделку? Действие необратимо.')) return; if(editingId===b.dataset.id) cancelEdit(); trades=trades.filter(t=>t.id!==b.dataset.id);save();render();});
+  document.querySelectorAll('.del').forEach(b=>b.onclick=()=>{
+    const doDelete=()=>{ if(editingId===b.dataset.id) cancelEdit(); trades=trades.filter(t=>t.id!==b.dataset.id);save();render(); };
+    if(appSettings.confirmDelete) showConfirm('Удалить эту сделку? Действие необратимо.', doDelete);
+    else doDelete();
+  });
   document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{ const t=trades.find(x=>x.id===b.dataset.edit); if(t) startEdit(t); });
   document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{ const t=trades.find(x=>x.id===b.dataset.view); if(t) openLightbox(t); });
   renderStats(sorted); renderWeekday(sorted); renderCalendar(sorted); renderSessions(sorted); renderHourHeatmap(sorted); renderExpiry(sorted); renderQuality(sorted); renderGoals();
@@ -1529,7 +1573,7 @@ function animateMoney(el,to){
   requestAnimationFrame(step);
 }
 function autoFillSim(){
-  if(!trades.length){ alert('В дневнике пока нет сделок для авто-заполнения.'); return; }
+  if(!trades.length){ showToast('⚠️ В дневнике пока нет сделок для авто-заполнения'); return; }
   const avgStake=trades.reduce((a,t)=>a+t.stake,0)/trades.length;
   const wins=trades.filter(t=>t.result==='win').length;
   const winRate=wins/trades.length*100;
@@ -1552,7 +1596,7 @@ function runSimulation(){
   const payout=parseFloat(document.getElementById('sim_payout').value)||0;
   const perDay=parseFloat(document.getElementById('sim_perday').value)||0;
   const target=parseFloat(document.getElementById('sim_target').value)||0;
-  if(deposit<=0||stake<=0){ alert('Укажи депозит и среднюю ставку больше нуля.'); return; }
+  if(deposit<=0||stake<=0){ showToast('⚠️ Укажи депозит и среднюю ставку больше нуля'); return; }
   const winRate=Math.min(Math.max(winRatePct/100,0),1);
   const rawRisk=stake/deposit;
   const risk=Math.min(rawRisk,0.5);
@@ -1613,7 +1657,7 @@ function runMoneyMgmt(){
   const deposit=parseFloat(document.getElementById('mm_deposit').value)||0;
   const payout=parseFloat(document.getElementById('mm_payout').value)||0;
   const note=document.getElementById('mmRiskNote');
-  if(deposit<=0||payout<=0){ alert('Укажи депозит и выплату брокера больше нуля.'); return; }
+  if(deposit<=0||payout<=0){ showToast('⚠️ Укажи депозит и выплату брокера больше нуля'); return; }
   const base=deposit*0.01;
   const rate=payout/100;
   const targetProfit=base*rate; // прибыль, которую планировали получить с самой первой сделки
@@ -2063,7 +2107,7 @@ setInterval(()=>{
 }, 4000);
 
 document.getElementById('quickRepeatBtn').onclick=()=>{
-  if(!trades.length){ alert('Пока нет ни одной сделки для повтора.'); return; }
+  if(!trades.length){ showToast('⚠️ Пока нет ни одной сделки для повтора'); return; }
   const last=trades[trades.length-1];
   curPair=last.pair; updatePairBtn();
   setDir(last.direction);
