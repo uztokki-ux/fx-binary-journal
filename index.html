@@ -78,28 +78,30 @@ textarea{min-height:48px;resize:vertical;}
 .ov_expiry{display:flex;gap:5px;flex-wrap:wrap;}
 .ov_expiry .chip{padding:6px 10px;font-size:11px;}
 .qualityBtns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
-.timerCard{background:rgba(108,140,255,.05);border:1px solid var(--border);border-radius:14px;padding:16px;margin:2px 0 16px;}
-.timerHead{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
-.timerHead label{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;}
-.timerHint{font-size:12px;color:var(--accent);font-weight:700;}
-.timerBody{display:flex;flex-direction:column;align-items:center;gap:12px;}
-.timerRingWrap{position:relative;width:120px;height:120px;transition:filter .3s;}
+.timerCard{background:rgba(108,140,255,.05);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin:2px 0 16px;}
+.timerHead{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.timerHead label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;}
+.timerDurChips{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;}
+.timerDurChips .chip{padding:5px 9px;font-size:11px;}
+.timerBody{display:flex;align-items:center;gap:14px;}
+.timerRingWrap{position:relative;width:64px;height:64px;flex:none;transition:filter .3s;}
 .timerRingWrap.running{animation:timerPulse 2s ease-in-out infinite;}
-@keyframes timerPulse{0%,100%{filter:drop-shadow(0 0 0 rgba(108,140,255,0));}50%{filter:drop-shadow(0 0 10px rgba(108,140,255,.55));}}
-.timerRing{width:120px;height:120px;transform:rotate(-90deg);}
+@keyframes timerPulse{0%,100%{filter:drop-shadow(0 0 0 rgba(108,140,255,0));}50%{filter:drop-shadow(0 0 8px rgba(108,140,255,.55));}}
+.timerRing{width:64px;height:64px;transform:rotate(-90deg);}
 .timerRingBg{fill:none;stroke:var(--border);stroke-width:8;}
 .timerRingFg{fill:none;stroke:var(--accent);stroke-width:8;stroke-linecap:round;stroke-dasharray:326.73;stroke-dashoffset:0;transition:stroke-dashoffset 1s linear,stroke .3s;}
 .timerRingFg.done{stroke:var(--mint);}
-.timerDigits{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--text);}
+.timerDigits{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--text);}
 .timerDigits.done{color:var(--mint);animation:timerDoneFlash .6s ease 2;}
 @keyframes timerDoneFlash{0%,100%{opacity:1;}50%{opacity:.35;}}
-.timerBtns{display:flex;gap:8px;}
-.timerBtn{padding:9px 16px;border-radius:10px;border:2px solid var(--border);background:#0d1017;color:var(--text);font-weight:700;font-size:12.5px;cursor:pointer;transition:.18s;}
+.timerRight{display:flex;flex-direction:column;gap:6px;flex:1;min-width:0;}
+.timerBtns{display:flex;gap:6px;}
+.timerBtn{width:34px;height:34px;border-radius:9px;border:2px solid var(--border);background:#0d1017;color:var(--text);font-weight:700;font-size:13px;cursor:pointer;transition:.18s;display:flex;align-items:center;justify-content:center;}
 .timerBtn:hover{transform:translateY(-1px);}
 .timerBtn.start{border-color:var(--mint);color:var(--mint);}
 .timerBtn.pause{border-color:#f5b942;color:#f5b942;}
 .timerBtn.reset{color:var(--muted);}
-.timerStatus{font-size:11px;color:var(--muted);text-align:center;max-width:280px;line-height:1.4;}
+.timerStatus{font-size:10.5px;color:var(--muted);line-height:1.35;}
 .overlapRow .resbtns{margin-bottom:0;}
 button.submit{width:100%;padding:14px;border:none;border-radius:12px;background:linear-gradient(90deg,var(--mint),#00c48c);color:#04140f;font-weight:800;font-size:14.5px;cursor:pointer;margin-top:4px;transition:.2s;}
 button.submit.editMode{background:linear-gradient(90deg,#f5b942,#e0943a);color:#2a1a00;}
@@ -597,8 +599,15 @@ body{transition:background-color .4s ease,color .4s ease;}
 
     <div class="timerCard" id="timerCard">
       <div class="timerHead">
-        <label style="margin:0">⏱️ Таймер ожидания экспирации</label>
-        <span class="timerHint" id="timerDurLabel">1 мин</span>
+        <label style="margin:0">⏱️ Выжидание позиции</label>
+      </div>
+      <div class="timerDurChips" id="timerDurChips">
+        <div class="chip" data-v="15">15с</div>
+        <div class="chip active" data-v="30">30с</div>
+        <div class="chip" data-v="60">1м</div>
+        <div class="chip" data-v="120">2м</div>
+        <div class="chip" data-v="180">3м</div>
+        <div class="chip" data-v="300">5м</div>
       </div>
       <div class="timerBody">
         <div class="timerRingWrap" id="timerRingWrap">
@@ -606,14 +615,16 @@ body{transition:background-color .4s ease,color .4s ease;}
             <circle class="timerRingBg" cx="60" cy="60" r="52"></circle>
             <circle class="timerRingFg" id="timerRingFg" cx="60" cy="60" r="52"></circle>
           </svg>
-          <div class="timerDigits" id="timerDigits">01:00</div>
+          <div class="timerDigits" id="timerDigits">00:30</div>
         </div>
-        <div class="timerBtns">
-          <button type="button" class="timerBtn start" id="timerStartBtn">▶ Старт</button>
-          <button type="button" class="timerBtn pause" id="timerPauseBtn" style="display:none">⏸ Пауза</button>
-          <button type="button" class="timerBtn reset" id="timerResetBtn">↺ Сброс</button>
+        <div class="timerRight">
+          <div class="timerBtns">
+            <button type="button" class="timerBtn start" id="timerStartBtn" title="Старт">▶</button>
+            <button type="button" class="timerBtn pause" id="timerPauseBtn" title="Пауза" style="display:none">⏸</button>
+            <button type="button" class="timerBtn reset" id="timerResetBtn" title="Сброс">↺</button>
+          </div>
+          <div class="timerStatus" id="timerStatus">Выбери время и выжди его перед входом в позицию</div>
         </div>
-        <div class="timerStatus" id="timerStatus">Синхронизирован с выбранной экспирацией — жди сигнал и отмечай результат осознанно, а не раньше времени</div>
       </div>
     </div>
 
@@ -809,7 +820,9 @@ const SOUND_TYPES={
   marimba:{name:'Маримба', notes:[440,554.37,659.25], wave:'triangle', gap:0.1},
   rise:{name:'Восход', notes:[392,523.25,659.25,783.99], wave:'sine', gap:0.07},
   nova:{name:'Нова', wave:'sawtooth', sweep:{from:220,to:1100,dur:0.32}, detune:8},
-  pulse:{name:'Пульсар', notes:[880,1108.73,1318.51,1760], wave:'sawtooth', gap:0.055}
+  pulse:{name:'Пульсар', notes:[880,1108.73,1318.51,1760], wave:'sawtooth', gap:0.055},
+  crystal:{name:'Кристалл', notes:[783.99,987.77,1174.66,1567.98], wave:'sine', gap:0.075},
+  aurora:{name:'Аврора', wave:'triangle', sweep:{from:300,to:820,dur:0.42}, detune:6}
 };
 let audioCtx=null;
 function getAudioCtx(){
@@ -870,10 +883,11 @@ let weekChart, expiryChart, qualityChart, simChart, sampleFn=null;
 let curDir='call', curExp='1м', curRes='win', curQuality='reference', overlapCount=0;
 let editingId=null;
 
-/* waiting timer — counts down the chosen expiry so the trader waits out the trade instead of closing early */
+/* position-waiting timer — a self-picked pre-entry cooldown, so the trader waits
+   out an impulse instead of entering immediately; independent of the expiry */
 const TIMER_RING_CIRC=326.73;
-let timerState={duration:60, remaining:60, running:false, intervalId:null, used:false, completed:false};
-function expirySeconds(v){ const n=parseInt(v)||1; return n*60; }
+const TIMER_IDLE_STATUS='Выбери время и выжди его перед входом в позицию';
+let timerState={duration:30, remaining:30, running:false, intervalId:null, used:false, completed:false};
 function fmtTimer(sec){ const m=Math.floor(sec/60), s=sec%60; return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0'); }
 function renderTimerDisplay(){
   document.getElementById('timerDigits').textContent=fmtTimer(Math.max(0,timerState.remaining));
@@ -885,16 +899,15 @@ function renderTimerDisplay(){
   document.getElementById('timerRingWrap').classList.toggle('running', timerState.running);
 }
 function updateTimerButtons(){
-  document.getElementById('timerStartBtn').style.display=timerState.running?'none':'inline-block';
-  document.getElementById('timerPauseBtn').style.display=timerState.running?'inline-block':'none';
-  document.getElementById('timerStartBtn').textContent=(timerState.used && !timerState.running && timerState.remaining>0 && timerState.remaining<timerState.duration)?'▶ Продолжить':'▶ Старт';
+  document.getElementById('timerStartBtn').style.display=timerState.running?'none':'flex';
+  document.getElementById('timerPauseBtn').style.display=timerState.running?'flex':'none';
+  document.getElementById('timerStartBtn').title=(timerState.used && !timerState.running && timerState.remaining>0 && timerState.remaining<timerState.duration)?'Продолжить':'Старт';
 }
 function setTimerStatus(msg){ document.getElementById('timerStatus').textContent=msg; }
-function syncTimerDurationToExpiry(){
-  const secs=expirySeconds(curExp);
-  timerState.duration=secs;
-  document.getElementById('timerDurLabel').textContent=curExp.replace('м',' мин');
-  if(!timerState.running && !timerState.used){ timerState.remaining=secs; timerState.completed=false; renderTimerDisplay(); }
+function selectWaitDuration(sec){
+  document.querySelectorAll('#timerDurChips .chip').forEach(x=>x.classList.toggle('active', Number(x.dataset.v)===sec));
+  timerState.duration=sec;
+  if(!timerState.running && !timerState.used){ timerState.remaining=sec; timerState.completed=false; renderTimerDisplay(); }
 }
 function startTimer(){
   if(timerState.running) return;
@@ -907,36 +920,36 @@ function startTimer(){
     renderTimerDisplay();
   },1000);
   renderTimerDisplay(); updateTimerButtons();
-  setTimerStatus('Идёт ожидание экспирации — не закрывай сделку раньше сигнала');
+  setTimerStatus('Идёт выжидание — не спеши со входом до сигнала');
 }
 function pauseTimer(){
   if(!timerState.running) return;
   clearInterval(timerState.intervalId); timerState.running=false;
   renderTimerDisplay(); updateTimerButtons();
-  setTimerStatus('Таймер на паузе — ожидание было прервано раньше срока');
+  setTimerStatus('На паузе — выжидание прервано раньше срока');
 }
 function completeTimer(){
   clearInterval(timerState.intervalId); timerState.intervalId=null;
   timerState.running=false; timerState.remaining=0; timerState.completed=true;
   renderTimerDisplay(); updateTimerButtons();
-  setTimerStatus('⏱️ Время ожидания истекло — можно фиксировать результат');
+  setTimerStatus('⏱️ Время вышло — можно осознанно входить в позицию');
   playChime(appSettings.soundType, true);
-  showToast('⏱️ Время ожидания истекло');
+  showToast('⏱️ Выжидание завершено');
 }
 function resetTimer(){
   clearInterval(timerState.intervalId); timerState.intervalId=null;
   timerState.running=false; timerState.used=false; timerState.completed=false;
   timerState.remaining=timerState.duration;
   renderTimerDisplay(); updateTimerButtons();
-  setTimerStatus('Синхронизирован с выбранной экспирацией — жди сигнал и отмечай результат осознанно, а не раньше времени');
+  setTimerStatus(TIMER_IDLE_STATUS);
 }
-function initTimerForEdit(exp){
+function initTimerForEdit(sec){
   clearInterval(timerState.intervalId); timerState.intervalId=null;
-  const secs=expirySeconds(exp||'1м');
+  const secs=sec||30;
   timerState={duration:secs, remaining:secs, running:false, intervalId:null, used:false, completed:false};
-  document.getElementById('timerDurLabel').textContent=(exp||'1м').replace('м',' мин');
+  document.querySelectorAll('#timerDurChips .chip').forEach(x=>x.classList.toggle('active', Number(x.dataset.v)===secs));
   renderTimerDisplay(); updateTimerButtons();
-  setTimerStatus('Синхронизирован с выбранной экспирацией — жди сигнал и отмечай результат осознанно, а не раньше времени');
+  setTimerStatus(TIMER_IDLE_STATUS);
 }
 let calDate=new Date();
 const DOW=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
@@ -1016,11 +1029,12 @@ playCardStagger(document.querySelector('.tabPanel.active'));
 document.getElementById('btnCall').onclick=()=>setDir('call');
 document.getElementById('btnPut').onclick=()=>setDir('put');
 function setDir(d){curDir=d;document.getElementById('btnCall').classList.toggle('active',d==='call');document.getElementById('btnPut').classList.toggle('active',d==='put');syncOverlapDirFromMain();}
-document.querySelectorAll('#expChips .chip').forEach(c=>c.onclick=()=>{document.querySelectorAll('#expChips .chip').forEach(x=>x.classList.remove('active'));c.classList.add('active');curExp=c.dataset.v;syncTimerDurationToExpiry();});
+document.querySelectorAll('#expChips .chip').forEach(c=>c.onclick=()=>{document.querySelectorAll('#expChips .chip').forEach(x=>x.classList.remove('active'));c.classList.add('active');curExp=c.dataset.v;});
+document.querySelectorAll('#timerDurChips .chip').forEach(c=>c.onclick=()=>selectWaitDuration(Number(c.dataset.v)));
 document.getElementById('timerStartBtn').onclick=startTimer;
 document.getElementById('timerPauseBtn').onclick=pauseTimer;
 document.getElementById('timerResetBtn').onclick=resetTimer;
-syncTimerDurationToExpiry();
+renderTimerDisplay(); updateTimerButtons();
 document.querySelectorAll('.resbtns:not(.ov_res) .resbtn').forEach(b=>{ if(!b.closest('#overlapRows')) b.onclick=()=>{ document.querySelectorAll('.resbtns:not(.ov_res) .resbtn').forEach(x=>{ if(!x.closest('#overlapRows')) x.classList.remove('active'); }); b.classList.add('active'); curRes=b.dataset.v; }; });
 document.querySelectorAll('#qualityBtns .resbtn').forEach(b=>b.onclick=()=>{ document.querySelectorAll('#qualityBtns .resbtn').forEach(x=>x.classList.remove('active')); b.classList.add('active'); curQuality=b.dataset.v; });
 
@@ -1357,8 +1371,8 @@ function analyzeTrade(t){
   if(t.notes && t.notes.trim()){ good.push('Записан разбор графика — по таким заметкам легче находить закономерности между сделками.'); }
   else { risk.push('Заметка по сделке не заполнена — без разбора сложнее понять, почему был именно такой вход, когда будешь пересматривать историю позже.'); }
   if(t.result==='loss' && ovCount===0 && t.quality==='reference'){ good.push('Сделка была по всем правилам, но всё равно закрылась в минус — это нормальная часть винрейта, если не превращается в системную проблему.'); }
-  if(t.waitTimerCompleted){ good.push('Ожидание экспирации было отслежено таймером до конца — дисциплина не закрывать сделку раньше времени снижает шанс поддаться эмоциям на середине пути.'); }
-  else if(t.waitTimerUsed){ risk.push('Таймер ожидания запускался, но был прерван раньше срока экспирации — стоит разобраться, что заставило прервать ожидание и не привело ли это к поспешному решению.'); }
+  if(t.waitTimerCompleted){ good.push('Перед входом было выдержано осознанное выжидание позиции по таймеру — пауза перед входом снижает шанс сделки на импульсе.'); }
+  else if(t.waitTimerUsed){ risk.push('Выжидание позиции перед входом запускалось, но было прервано раньше срока — стоит разобраться, что заставило войти раньше и не было ли это импульсивным решением.'); }
   let verdict='good';
   if(risk.length>=2 || (t.quality==='mistake' && p<0)) verdict='risky';
   else if(risk.length===1) verdict='mixed';
@@ -1400,7 +1414,7 @@ function openLightbox(t){
     ['Сессия',sessionFor(t.time).emoji+' '+sessionFor(t.time).short],
     ['Качество',t.quality==='mistake'?'❌ Не система':(t.quality==='reference'?'✅ Система':'—')],
     ['Результат',t.result.toUpperCase()],['Итог P&L',fmt(p)+'$'],['Состояние',t.emotion],
-    ['Таймер ожидания',t.waitTimerCompleted?'⏱️✅ Дождался':(t.waitTimerUsed?'⏱️⏹ Прервано':'—')]];
+    ['Выжидание позиции',t.waitTimerCompleted?'⏱️✅ Выдержано':(t.waitTimerUsed?'⏱️⏹ Прервано':'—')]];
   document.getElementById('lbInfo').innerHTML=info.map(([l,v])=>`<div class="it"><b class="${l==='Итог P&L'?(p>=0?'mint':'coral'):''}">${v}</b><span>${l}</span></div>`).join('');
   const ovWrap=document.getElementById('lbOverlaps');
   if(t.overlaps && t.overlaps.length){
@@ -1427,7 +1441,7 @@ function render(){
     const tr=document.createElement('tr');
     const sess=sessionFor(t.time);
     const verdict=analyzeTrade(t).verdict;
-    const timerBadge=t.waitTimerCompleted?'<span title="Дождался экспирации по таймеру" style="opacity:.75;margin-left:4px">⏱️✅</span>':(t.waitTimerUsed?'<span title="Таймер был запущен, но прерван раньше срока" style="opacity:.6;margin-left:4px">⏱️⏹</span>':'');
+    const timerBadge=t.waitTimerCompleted?'<span title="Выжидание позиции перед входом выдержано по таймеру" style="opacity:.75;margin-left:4px">⏱️✅</span>':(t.waitTimerUsed?'<span title="Выжидание позиции было запущено, но прервано раньше срока" style="opacity:.6;margin-left:4px">⏱️⏹</span>':'');
     tr.innerHTML=`<td>${t.date}</td><td>${t.time||''}${timerBadge}</td><td><span class="badge sess">${sess.emoji} ${sess.short}</span></td><td>${t.pair}</td><td>${t.direction==='call'?'▲ CALL':'▼ PUT'}</td>
       <td>${t.expiry}</td><td>$${t.stake}</td>
       <td>${ovCount?`<span class="badge ov">${ovCount}×</span>`:'—'}</td>
@@ -2168,7 +2182,7 @@ function resetTradeForm(full){
   document.querySelectorAll('#qualityBtns .resbtn').forEach(x=>x.classList.remove('active'));
   document.querySelector('#qualityBtns .resbtn[data-v="reference"]').classList.add('active');
   curQuality='reference';
-  initTimerForEdit(full?'1м':curExp);
+  if(full) initTimerForEdit(30); else resetTimer();
   if(!full) return;
   setDir('call');
   curExp='1м';
@@ -2188,7 +2202,7 @@ function resetTradeForm(full){
 
 function populateFormFromTrade(t){
   setDir(t.direction);
-  initTimerForEdit(t.expiry);
+  initTimerForEdit(t.waitDurationSec||30);
   curPair=t.pair; updatePairBtn();
   document.getElementById('f_date').value=t.date;
   document.getElementById('f_time').value=t.time||'';
@@ -2266,7 +2280,7 @@ document.getElementById('addBtn').onclick=()=>{
     emotion:curEmotion,
     notes:document.getElementById('f_notes').value,
     imgBefore:imgBeforeData, imgAfter:imgAfterData,
-    waitTimerUsed:timerState.used, waitTimerCompleted:timerState.completed
+    waitTimerUsed:timerState.used, waitTimerCompleted:timerState.completed, waitDurationSec:timerState.duration
   };
   if(editingId){
     const idx=trades.findIndex(x=>x.id===editingId);
@@ -2309,7 +2323,7 @@ document.getElementById('aiBtn').onclick=async ()=>{
   const data=trades.map(t=>({pair:t.pair,dir:t.direction,exp:t.expiry,stake:t.stake,payout:t.payout,result:t.result,
     overlaps:(t.overlaps||[]).map(o=>({stake:o.stake,payout:o.payout||t.payout,result:o.result,expiry:o.expiry||'1м',direction:o.direction||t.direction})),
     emotion:t.emotion,quality:t.quality||'не отмечено',notes:t.notes,date:t.date,time:t.time,weekday:DOW[weekdayIdx(t.date)],session:sessionFor(t.time).short,itogPnl:pnl(t),
-    waitTimer:t.waitTimerCompleted?'дождался таймера до конца':(t.waitTimerUsed?'таймер прерван раньше срока':'таймер не использовался')}));
+    waitTimer:t.waitTimerCompleted?'выждал позицию перед входом по таймеру до конца':(t.waitTimerUsed?'выжидание позиции прервано раньше срока':'таймер выжидания не использовался')}));
   const prompt=`Ты — очень опытный, но простой в общении наставник по бинарным опционам на форекс. Объясняй всё максимально понятным, бытовым языком, без сложных терминов и названий стратегий (никаких "мартингейл" и подобных умных слов) — как будто говоришь с другом без опыта в трейдинге. При этом разбор должен быть подробным и по существу.
 
 Данные сделок (включая перекрытия — докрытия убыточной сделки, если они были, максимум 3 на сделку; поле quality означает "reference" — сделка по правилам, "mistake" — нарушение правил):
@@ -2335,7 +2349,7 @@ document.getElementById('errBtn').onclick=async ()=>{
   const data=trades.map(t=>({pair:t.pair,dir:t.direction,exp:t.expiry,stake:t.stake,payout:t.payout,result:t.result,
     overlaps:(t.overlaps||[]).map(o=>({stake:o.stake,payout:o.payout||t.payout,result:o.result,expiry:o.expiry||'1м',direction:o.direction||t.direction})),
     emotion:t.emotion,quality:t.quality||'не отмечено',notes:t.notes,date:t.date,time:t.time,weekday:DOW[weekdayIdx(t.date)],session:sessionFor(t.time).short,itogPnl:pnl(t),
-    waitTimer:t.waitTimerCompleted?'дождался таймера до конца':(t.waitTimerUsed?'таймер прерван раньше срока':'таймер не использовался')}));
+    waitTimer:t.waitTimerCompleted?'выждал позицию перед входом по таймеру до конца':(t.waitTimerUsed?'выжидание позиции прервано раньше срока':'таймер выжидания не использовался')}));
   const prompt=`Ты — наставник по бинарным опционам на форекс, который говорит очень просто и по-дружески, без сложных терминов и названий стратегий.
 
 Твоя ЕДИНСТВЕННАЯ задача сейчас — найти и разложить по полочкам ТОЛЬКО ошибки трейдера. Ничего про плюсы, ничего про то, что хорошо — только ошибки. Никакой воды и вступлений.
@@ -2366,14 +2380,22 @@ function renderThemeGrid(){
   });
 }
 renderThemeGrid();
+function selectSoundType(key){
+  appSettings.soundType=key; saveSettings();
+  document.querySelectorAll('#soundGrid .soundSwatch').forEach(el=>el.classList.toggle('sel', el.dataset.key===key));
+  playChime(key);
+}
 function renderSoundGrid(){
+  // build the grid ONCE and only ever toggle classes afterwards — rebuilding the
+  // DOM (innerHTML='') on every click was destroying/recreating the buttons the
+  // user was actively clicking, which made rapid switching feel unresponsive/stuck.
   const grid=document.getElementById('soundGrid'); grid.innerHTML='';
   Object.entries(SOUND_TYPES).forEach(([key,s])=>{
     const el=document.createElement('div');
     el.className='soundSwatch'+(key===appSettings.soundType?' sel':'');
     el.dataset.key=key;
     el.innerHTML=`<span class="soundName">${s.name}</span><span class="soundPlayBtn" title="Прослушать">▶</span>`;
-    el.querySelector('.soundName').onclick=()=>{ appSettings.soundType=key; saveSettings(); renderSoundGrid(); playChime(key); };
+    el.querySelector('.soundName').onclick=()=>selectSoundType(key);
     el.querySelector('.soundPlayBtn').onclick=(ev)=>{ ev.stopPropagation(); playChime(key); };
     grid.appendChild(el);
   });
