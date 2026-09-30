@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>FX Binary Journal</title>
+<title>Trader Journal Prime</title>
 <script data-goatcounter="https://fx-binary-journal.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
@@ -62,6 +62,8 @@ textarea{min-height:48px;resize:vertical;}
 .dirbtn:active{transform:scale(.97)}
 .dirbtn.call.active{border-color:var(--mint);color:var(--mint);background:rgba(0,226,160,.1);box-shadow:0 0 22px rgba(0,226,160,.3);}
 .dirbtn.put.active{border-color:var(--coral);color:var(--coral);background:rgba(255,90,110,.1);box-shadow:0 0 22px rgba(255,90,110,.3);}
+.dirbtn.small{padding:9px;font-size:12px;border-radius:10px;}
+.dirbtns.small{margin-bottom:0;}
 .chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
 .chip{padding:7px 13px;border-radius:20px;border:1px solid var(--border);background:#0d1017;color:var(--muted);font-size:12px;cursor:pointer;transition:.15s;}
 .chip:hover{border-color:var(--accent);}
@@ -76,6 +78,28 @@ textarea{min-height:48px;resize:vertical;}
 .ov_expiry{display:flex;gap:5px;flex-wrap:wrap;}
 .ov_expiry .chip{padding:6px 10px;font-size:11px;}
 .qualityBtns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.timerCard{background:rgba(108,140,255,.05);border:1px solid var(--border);border-radius:14px;padding:16px;margin:2px 0 16px;}
+.timerHead{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.timerHead label{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;}
+.timerHint{font-size:12px;color:var(--accent);font-weight:700;}
+.timerBody{display:flex;flex-direction:column;align-items:center;gap:12px;}
+.timerRingWrap{position:relative;width:120px;height:120px;transition:filter .3s;}
+.timerRingWrap.running{animation:timerPulse 2s ease-in-out infinite;}
+@keyframes timerPulse{0%,100%{filter:drop-shadow(0 0 0 rgba(108,140,255,0));}50%{filter:drop-shadow(0 0 10px rgba(108,140,255,.55));}}
+.timerRing{width:120px;height:120px;transform:rotate(-90deg);}
+.timerRingBg{fill:none;stroke:var(--border);stroke-width:8;}
+.timerRingFg{fill:none;stroke:var(--accent);stroke-width:8;stroke-linecap:round;stroke-dasharray:326.73;stroke-dashoffset:0;transition:stroke-dashoffset 1s linear,stroke .3s;}
+.timerRingFg.done{stroke:var(--mint);}
+.timerDigits{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--text);}
+.timerDigits.done{color:var(--mint);animation:timerDoneFlash .6s ease 2;}
+@keyframes timerDoneFlash{0%,100%{opacity:1;}50%{opacity:.35;}}
+.timerBtns{display:flex;gap:8px;}
+.timerBtn{padding:9px 16px;border-radius:10px;border:2px solid var(--border);background:#0d1017;color:var(--text);font-weight:700;font-size:12.5px;cursor:pointer;transition:.18s;}
+.timerBtn:hover{transform:translateY(-1px);}
+.timerBtn.start{border-color:var(--mint);color:var(--mint);}
+.timerBtn.pause{border-color:#f5b942;color:#f5b942;}
+.timerBtn.reset{color:var(--muted);}
+.timerStatus{font-size:11px;color:var(--muted);text-align:center;max-width:280px;line-height:1.4;}
 .overlapRow .resbtns{margin-bottom:0;}
 button.submit{width:100%;padding:14px;border:none;border-radius:12px;background:linear-gradient(90deg,var(--mint),#00c48c);color:#04140f;font-weight:800;font-size:14.5px;cursor:pointer;margin-top:4px;transition:.2s;}
 button.submit.editMode{background:linear-gradient(90deg,#f5b942,#e0943a);color:#2a1a00;}
@@ -364,7 +388,7 @@ body{transition:background-color .4s ease,color .4s ease;}
 </head>
 <body>
 <div class="blob blob1"></div><div class="blob blob2"></div>
-<div class="nav"><div class="brand"><div class="dot"></div>FX BINARY JOURNAL</div><button type="button" class="settingsBtn" id="settingsBtn" title="Настройки дневника">⚙️</button></div>
+<div class="nav"><div class="brand"><div class="dot"></div>TRADER JOURNAL PRIME</div><button type="button" class="settingsBtn" id="settingsBtn" title="Настройки дневника">⚙️</button></div>
 <div class="tabBar">
   <button class="tabBtn active" data-tab="stats"><span class="tabIco">📊</span>Обзор</button>
   <button class="tabBtn" data-tab="news"><span class="tabIco">📰</span>Новости</button>
@@ -422,10 +446,10 @@ body{transition:background-color .4s ease,color .4s ease;}
   </div>
 
   <div class="card">
-    <h2>🏆 Эталон vs 🚨 Ошибка <button class="collToggle" id="qualToggle">▾</button></h2>
+    <h2>✅ Система vs ❌ Не система <button class="collToggle" id="qualToggle">▾</button></h2>
     <div class="collapsible" id="qualBody">
       <div class="chartWrap"><canvas id="qualityChart"></canvas></div>
-      <div class="empty" id="qualityEmpty" style="display:none">Отмечай новые сделки как «Эталон» или «Слив/Ошибка» в форме ниже — здесь появится сравнение винрейта.</div>
+      <div class="empty" id="qualityEmpty" style="display:none">Отмечай новые сделки как «Система» или «Не система» в форме ниже — здесь появится сравнение винрейта.</div>
     </div>
   </div>
 
@@ -570,6 +594,29 @@ body{transition:background-color .4s ease,color .4s ease;}
       <div class="chip" data-v="3м">3м</div><div class="chip" data-v="4м">4м</div>
       <div class="chip" data-v="5м">5м</div>
     </div>
+
+    <div class="timerCard" id="timerCard">
+      <div class="timerHead">
+        <label style="margin:0">⏱️ Таймер ожидания экспирации</label>
+        <span class="timerHint" id="timerDurLabel">1 мин</span>
+      </div>
+      <div class="timerBody">
+        <div class="timerRingWrap" id="timerRingWrap">
+          <svg class="timerRing" viewBox="0 0 120 120">
+            <circle class="timerRingBg" cx="60" cy="60" r="52"></circle>
+            <circle class="timerRingFg" id="timerRingFg" cx="60" cy="60" r="52"></circle>
+          </svg>
+          <div class="timerDigits" id="timerDigits">01:00</div>
+        </div>
+        <div class="timerBtns">
+          <button type="button" class="timerBtn start" id="timerStartBtn">▶ Старт</button>
+          <button type="button" class="timerBtn pause" id="timerPauseBtn" style="display:none">⏸ Пауза</button>
+          <button type="button" class="timerBtn reset" id="timerResetBtn">↺ Сброс</button>
+        </div>
+        <div class="timerStatus" id="timerStatus">Синхронизирован с выбранной экспирацией — жди сигнал и отмечай результат осознанно, а не раньше времени</div>
+      </div>
+    </div>
+
     <label>Результат основной сделки</label>
     <div class="resbtns">
       <button type="button" class="resbtn win active" data-v="win">WIN</button>
@@ -578,8 +625,8 @@ body{transition:background-color .4s ease,color .4s ease;}
     </div>
     <label>Качество сделки (по правилам твоей ТС)</label>
     <div class="qualityBtns" id="qualityBtns">
-      <button type="button" class="resbtn win active" data-v="reference">🏆 Эталон</button>
-      <button type="button" class="resbtn loss" data-v="mistake">🚨 Слив / Ошибка</button>
+      <button type="button" class="resbtn win active" data-v="reference">✅ Система</button>
+      <button type="button" class="resbtn loss" data-v="mistake">❌ Не система</button>
     </div>
     <label>Перекрытия (докрытие сделки, максимум 3)</label>
     <div class="chips" id="overlapChips">
@@ -760,7 +807,9 @@ const SOUND_TYPES={
   coin:{name:'Монетка', notes:[988,1568,1976], wave:'square', gap:0.07},
   chord:{name:'Аккорд успеха', notes:[523.25,659.25,783.99], wave:'sine', gap:0.09},
   marimba:{name:'Маримба', notes:[440,554.37,659.25], wave:'triangle', gap:0.1},
-  rise:{name:'Восход', notes:[392,523.25,659.25,783.99], wave:'sine', gap:0.07}
+  rise:{name:'Восход', notes:[392,523.25,659.25,783.99], wave:'sine', gap:0.07},
+  nova:{name:'Нова', wave:'sawtooth', sweep:{from:220,to:1100,dur:0.32}, detune:8},
+  pulse:{name:'Пульсар', notes:[880,1108.73,1318.51,1760], wave:'sawtooth', gap:0.055}
 };
 let audioCtx=null;
 function getAudioCtx(){
@@ -772,9 +821,36 @@ function playChime(type, big){
   if(!appSettings.sound) return;
   const ctx=getAudioCtx(); if(!ctx) return;
   const def=SOUND_TYPES[type]||SOUND_TYPES[appSettings.soundType]||SOUND_TYPES.chime;
+  const now=ctx.currentTime;
+  if(def.sweep){
+    const {from,to,dur}=def.sweep;
+    const mul=big?1.35:1;
+    [0, def.detune||0].forEach((det,vi)=>{
+      const osc=ctx.createOscillator(); const gain=ctx.createGain();
+      osc.type=def.wave||'sawtooth';
+      osc.frequency.setValueAtTime(from, now);
+      osc.frequency.exponentialRampToValueAtTime(to*mul, now+dur);
+      osc.detune.value=det;
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(vi===0?(big?0.2:0.14):(big?0.12:0.08), now+0.03);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now+dur+0.15);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(now); osc.stop(now+dur+0.2);
+    });
+    if(big){
+      const osc2=ctx.createOscillator(); const gain2=ctx.createGain();
+      osc2.type='sine'; osc2.frequency.value=to*mul*1.5;
+      const start2=now+dur*0.85;
+      gain2.gain.setValueAtTime(0,start2);
+      gain2.gain.linearRampToValueAtTime(0.18,start2+0.02);
+      gain2.gain.exponentialRampToValueAtTime(0.0001,start2+0.5);
+      osc2.connect(gain2); gain2.connect(ctx.destination);
+      osc2.start(start2); osc2.stop(start2+0.55);
+    }
+    return;
+  }
   const notes=big? def.notes.concat(def.notes[def.notes.length-1]*2) : def.notes;
   const gap=def.gap||0.09;
-  const now=ctx.currentTime;
   notes.forEach((freq,i)=>{
     const osc=ctx.createOscillator(); const gain=ctx.createGain();
     osc.type=def.wave||'sine'; osc.frequency.value=freq;
@@ -793,6 +869,75 @@ let trades=[]; try{trades=JSON.parse(localStorage.getItem(KEY))||[];}catch(e){tr
 let weekChart, expiryChart, qualityChart, simChart, sampleFn=null;
 let curDir='call', curExp='1м', curRes='win', curQuality='reference', overlapCount=0;
 let editingId=null;
+
+/* waiting timer — counts down the chosen expiry so the trader waits out the trade instead of closing early */
+const TIMER_RING_CIRC=326.73;
+let timerState={duration:60, remaining:60, running:false, intervalId:null, used:false, completed:false};
+function expirySeconds(v){ const n=parseInt(v)||1; return n*60; }
+function fmtTimer(sec){ const m=Math.floor(sec/60), s=sec%60; return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0'); }
+function renderTimerDisplay(){
+  document.getElementById('timerDigits').textContent=fmtTimer(Math.max(0,timerState.remaining));
+  document.getElementById('timerDigits').classList.toggle('done', timerState.completed);
+  const ring=document.getElementById('timerRingFg');
+  const frac=timerState.duration>0 ? timerState.remaining/timerState.duration : 0;
+  ring.style.strokeDashoffset=String(TIMER_RING_CIRC*(1-frac));
+  ring.classList.toggle('done', timerState.completed);
+  document.getElementById('timerRingWrap').classList.toggle('running', timerState.running);
+}
+function updateTimerButtons(){
+  document.getElementById('timerStartBtn').style.display=timerState.running?'none':'inline-block';
+  document.getElementById('timerPauseBtn').style.display=timerState.running?'inline-block':'none';
+  document.getElementById('timerStartBtn').textContent=(timerState.used && !timerState.running && timerState.remaining>0 && timerState.remaining<timerState.duration)?'▶ Продолжить':'▶ Старт';
+}
+function setTimerStatus(msg){ document.getElementById('timerStatus').textContent=msg; }
+function syncTimerDurationToExpiry(){
+  const secs=expirySeconds(curExp);
+  timerState.duration=secs;
+  document.getElementById('timerDurLabel').textContent=curExp.replace('м',' мин');
+  if(!timerState.running && !timerState.used){ timerState.remaining=secs; timerState.completed=false; renderTimerDisplay(); }
+}
+function startTimer(){
+  if(timerState.running) return;
+  if(timerState.remaining<=0) timerState.remaining=timerState.duration;
+  timerState.running=true; timerState.used=true; timerState.completed=false;
+  clearInterval(timerState.intervalId);
+  timerState.intervalId=setInterval(()=>{
+    timerState.remaining--;
+    if(timerState.remaining<=0){ completeTimer(); return; }
+    renderTimerDisplay();
+  },1000);
+  renderTimerDisplay(); updateTimerButtons();
+  setTimerStatus('Идёт ожидание экспирации — не закрывай сделку раньше сигнала');
+}
+function pauseTimer(){
+  if(!timerState.running) return;
+  clearInterval(timerState.intervalId); timerState.running=false;
+  renderTimerDisplay(); updateTimerButtons();
+  setTimerStatus('Таймер на паузе — ожидание было прервано раньше срока');
+}
+function completeTimer(){
+  clearInterval(timerState.intervalId); timerState.intervalId=null;
+  timerState.running=false; timerState.remaining=0; timerState.completed=true;
+  renderTimerDisplay(); updateTimerButtons();
+  setTimerStatus('⏱️ Время ожидания истекло — можно фиксировать результат');
+  playChime(appSettings.soundType, true);
+  showToast('⏱️ Время ожидания истекло');
+}
+function resetTimer(){
+  clearInterval(timerState.intervalId); timerState.intervalId=null;
+  timerState.running=false; timerState.used=false; timerState.completed=false;
+  timerState.remaining=timerState.duration;
+  renderTimerDisplay(); updateTimerButtons();
+  setTimerStatus('Синхронизирован с выбранной экспирацией — жди сигнал и отмечай результат осознанно, а не раньше времени');
+}
+function initTimerForEdit(exp){
+  clearInterval(timerState.intervalId); timerState.intervalId=null;
+  const secs=expirySeconds(exp||'1м');
+  timerState={duration:secs, remaining:secs, running:false, intervalId:null, used:false, completed:false};
+  document.getElementById('timerDurLabel').textContent=(exp||'1м').replace('м',' мин');
+  renderTimerDisplay(); updateTimerButtons();
+  setTimerStatus('Синхронизирован с выбранной экспирацией — жди сигнал и отмечай результат осознанно, а не раньше времени');
+}
 let calDate=new Date();
 const DOW=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
 const MONTHS=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
@@ -800,10 +945,10 @@ const PAIRS=['EUR/USD','GBP/USD','USD/JPY','USD/CHF','USD/CAD','AUD/USD','NZD/US
   'EUR/CAD','EUR/AUD','EUR/CHF','EUR/NZD','GBP/CAD','GBP/CHF','GBP/AUD','GBP/NZD','AUD/CAD','AUD/CHF','AUD/NZD','CAD/JPY','NZD/JPY','CAD/CHF','USD/TRY','USD/ZAR','USD/MXN'];
 const EMOTIONS=[{l:'Спокойствие',i:'😌'},{l:'Уверенность',i:'😎'},{l:'Азарт/жадность',i:'🤑'},{l:'Месть за убыток',i:'😡'},{l:'Страх',i:'😨'},{l:'Скука/от нечего делать',i:'😐'},{l:'Сомнение',i:'🤔'}];
 const SESSIONS=[
-  {key:'asia', name:'Азия (флет)', short:'Азия', emoji:'🌙', start:0, end:12},
-  {key:'eu', name:'Европа (открытие)', short:'Европа', emoji:'🇪🇺', start:12, end:16},
-  {key:'euus', name:'Европа/США (перекрытие)', short:'EU/US', emoji:'🔥', start:16, end:20},
-  {key:'us', name:'США (вечер)', short:'США', emoji:'🇺🇸', start:20, end:24}
+  {key:'asia', name:'Азия', short:'Азия', emoji:'🌙', start:0, end:12},
+  {key:'eu', name:'Европа', short:'Европа', emoji:'🇪🇺', start:12, end:16},
+  {key:'euus', name:'Европа/США', short:'EU/US', emoji:'🔥', start:16, end:20},
+  {key:'us', name:'США', short:'США', emoji:'🇺🇸', start:20, end:24}
 ];
 function fmtHour(h){ return String(h%24).padStart(2,'0')+':00'; }
 SESSIONS.forEach(s=>{ s.range=fmtHour(s.start)+'–'+fmtHour(s.end); });
@@ -870,8 +1015,12 @@ playCardStagger(document.querySelector('.tabPanel.active'));
 /* direction / expiry / result */
 document.getElementById('btnCall').onclick=()=>setDir('call');
 document.getElementById('btnPut').onclick=()=>setDir('put');
-function setDir(d){curDir=d;document.getElementById('btnCall').classList.toggle('active',d==='call');document.getElementById('btnPut').classList.toggle('active',d==='put');}
-document.querySelectorAll('#expChips .chip').forEach(c=>c.onclick=()=>{document.querySelectorAll('#expChips .chip').forEach(x=>x.classList.remove('active'));c.classList.add('active');curExp=c.dataset.v;});
+function setDir(d){curDir=d;document.getElementById('btnCall').classList.toggle('active',d==='call');document.getElementById('btnPut').classList.toggle('active',d==='put');syncOverlapDirFromMain();}
+document.querySelectorAll('#expChips .chip').forEach(c=>c.onclick=()=>{document.querySelectorAll('#expChips .chip').forEach(x=>x.classList.remove('active'));c.classList.add('active');curExp=c.dataset.v;syncTimerDurationToExpiry();});
+document.getElementById('timerStartBtn').onclick=startTimer;
+document.getElementById('timerPauseBtn').onclick=pauseTimer;
+document.getElementById('timerResetBtn').onclick=resetTimer;
+syncTimerDurationToExpiry();
 document.querySelectorAll('.resbtns:not(.ov_res) .resbtn').forEach(b=>{ if(!b.closest('#overlapRows')) b.onclick=()=>{ document.querySelectorAll('.resbtns:not(.ov_res) .resbtn').forEach(x=>{ if(!x.closest('#overlapRows')) x.classList.remove('active'); }); b.classList.add('active'); curRes=b.dataset.v; }; });
 document.querySelectorAll('#qualityBtns .resbtn').forEach(b=>b.onclick=()=>{ document.querySelectorAll('#qualityBtns .resbtn').forEach(x=>x.classList.remove('active')); b.classList.add('active'); curQuality=b.dataset.v; });
 
@@ -887,6 +1036,12 @@ function renderOverlapRows(){
     const row=document.createElement('div'); row.className='overlapRow';
     row.innerHTML=`<div><label>Перекрытие ${i+1} · ставка ($)</label><input type="number" step="any" class="ov_stake" value="10"></div>
       <div><label>Выплата (%)</label><input type="number" step="any" class="ov_payout" value="${defPayout}"></div>
+      <div class="ovExpiryWrap"><label>Направление перекрытия</label>
+        <div class="dirbtns small ov_dir">
+          <button type="button" class="dirbtn call small ov_dir_btn${curDir==='call'?' active':''}" data-v="call">▲ CALL</button>
+          <button type="button" class="dirbtn put small ov_dir_btn${curDir==='put'?' active':''}" data-v="put">▼ PUT</button>
+        </div>
+      </div>
       <div class="ovExpiryWrap"><label>Экспирация перекрытия</label>
         <div class="chips ov_expiry">
           <div class="chip active" data-v="1м">1м</div><div class="chip" data-v="2м">2м</div>
@@ -907,6 +1062,9 @@ function renderOverlapRows(){
   wrap.querySelectorAll('.ov_expiry').forEach(group=>{
     group.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{ group.querySelectorAll('.chip').forEach(x=>x.classList.remove('active')); b.classList.add('active'); });
   });
+  wrap.querySelectorAll('.ov_dir').forEach(group=>{
+    group.querySelectorAll('.ov_dir_btn').forEach(b=>b.onclick=()=>{ group.dataset.touched='1'; group.querySelectorAll('.ov_dir_btn').forEach(x=>x.classList.remove('active')); b.classList.add('active'); });
+  });
   wrap.querySelectorAll('.ov_payout').forEach(inp=>{
     inp.addEventListener('input', ()=>{ inp.dataset.touched='1'; });
   });
@@ -917,6 +1075,12 @@ document.getElementById('f_payout').addEventListener('input', ()=>{
     if(!inp.dataset.touched) inp.value=v;
   });
 });
+function syncOverlapDirFromMain(){
+  document.querySelectorAll('#overlapRows .ov_dir').forEach(group=>{
+    if(group.dataset.touched) return;
+    group.querySelectorAll('.ov_dir_btn').forEach(x=>x.classList.toggle('active', x.dataset.v===curDir));
+  });
+}
 
 /* collapsibles */
 /* when a collapsible nested inside another (already-open) collapsible expands,
@@ -1161,8 +1325,8 @@ function analyzeTrade(t){
   const good=[], risk=[];
   const overlaps=t.overlaps||[];
   const ovCount=overlaps.length;
-  if(t.quality==='reference'){ good.push('Сделка отмечена как «🏆 Эталон» — она соответствовала твоим правилам входа.'); }
-  else if(t.quality==='mistake'){ risk.push('Сделка отмечена как «🚨 Слив/Ошибка» — сам факт, что ты это заметил, уже хороший знак, но стоит разобрать, что заставило нарушить план.'); }
+  if(t.quality==='reference'){ good.push('Сделка отмечена как «✅ Система» — она соответствовала твоим правилам входа.'); }
+  else if(t.quality==='mistake'){ risk.push('Сделка отмечена как «❌ Не система» — сам факт, что ты это заметил, уже хороший знак, но стоит разобрать, что заставило нарушить план.'); }
   if(CALM_EMOTIONS.includes(t.emotion)){ good.push('Состояние на входе — «'+t.emotion+'» — спокойный настрой снижает шанс импульсивного решения.'); }
   else if(RISKY_EMOTIONS[t.emotion]){ risk.push(RISKY_EMOTIONS[t.emotion]); }
   let doubleWin=false;
@@ -1193,6 +1357,8 @@ function analyzeTrade(t){
   if(t.notes && t.notes.trim()){ good.push('Записан разбор графика — по таким заметкам легче находить закономерности между сделками.'); }
   else { risk.push('Заметка по сделке не заполнена — без разбора сложнее понять, почему был именно такой вход, когда будешь пересматривать историю позже.'); }
   if(t.result==='loss' && ovCount===0 && t.quality==='reference'){ good.push('Сделка была по всем правилам, но всё равно закрылась в минус — это нормальная часть винрейта, если не превращается в системную проблему.'); }
+  if(t.waitTimerCompleted){ good.push('Ожидание экспирации было отслежено таймером до конца — дисциплина не закрывать сделку раньше времени снижает шанс поддаться эмоциям на середине пути.'); }
+  else if(t.waitTimerUsed){ risk.push('Таймер ожидания запускался, но был прерван раньше срока экспирации — стоит разобраться, что заставило прервать ожидание и не привело ли это к поспешному решению.'); }
   let verdict='good';
   if(risk.length>=2 || (t.quality==='mistake' && p<0)) verdict='risky';
   else if(risk.length===1) verdict='mixed';
@@ -1232,12 +1398,13 @@ function openLightbox(t){
   const info=[['Пара',t.pair],['Направление',t.direction==='call'?'▲ CALL':'▼ PUT'],['Дата',t.date],['Время',t.time||'—'],
     ['День недели',DOW[weekdayIdx(t.date)]],['Экспирация',t.expiry],['Ставка','$'+t.stake],['Выплата',t.payout+'%'],
     ['Сессия',sessionFor(t.time).emoji+' '+sessionFor(t.time).short],
-    ['Качество',t.quality==='mistake'?'🚨 Ошибка':(t.quality==='reference'?'🏆 Эталон':'—')],
-    ['Результат',t.result.toUpperCase()],['Итог P&L',fmt(p)+'$'],['Состояние',t.emotion]];
+    ['Качество',t.quality==='mistake'?'❌ Не система':(t.quality==='reference'?'✅ Система':'—')],
+    ['Результат',t.result.toUpperCase()],['Итог P&L',fmt(p)+'$'],['Состояние',t.emotion],
+    ['Таймер ожидания',t.waitTimerCompleted?'⏱️✅ Дождался':(t.waitTimerUsed?'⏱️⏹ Прервано':'—')]];
   document.getElementById('lbInfo').innerHTML=info.map(([l,v])=>`<div class="it"><b class="${l==='Итог P&L'?(p>=0?'mint':'coral'):''}">${v}</b><span>${l}</span></div>`).join('');
   const ovWrap=document.getElementById('lbOverlaps');
   if(t.overlaps && t.overlaps.length){
-    ovWrap.innerHTML='<b>Перекрытия (' + t.overlaps.length + '):</b> ' + t.overlaps.map((o,i)=>`#${i+1} $${o.stake} · ${o.payout||t.payout}% · ${o.expiry||'1м'} — ${o.result.toUpperCase()}`).join(' · ');
+    ovWrap.innerHTML='<b>Перекрытия (' + t.overlaps.length + '):</b> ' + t.overlaps.map((o,i)=>`#${i+1} ${(o.direction||t.direction)==='put'?'▼':'▲'} $${o.stake} · ${o.payout||t.payout}% · ${o.expiry||'1м'} — ${o.result.toUpperCase()}`).join(' · ');
   } else { ovWrap.innerHTML=''; }
   const notesEl=document.getElementById('lbNotes');
   if(t.notes){ notesEl.style.display='block'; notesEl.textContent='Мой разбор графика: '+t.notes; } else notesEl.style.display='none';
@@ -1260,11 +1427,12 @@ function render(){
     const tr=document.createElement('tr');
     const sess=sessionFor(t.time);
     const verdict=analyzeTrade(t).verdict;
-    tr.innerHTML=`<td>${t.date}</td><td>${t.time||''}</td><td><span class="badge sess">${sess.emoji} ${sess.short}</span></td><td>${t.pair}</td><td>${t.direction==='call'?'▲ CALL':'▼ PUT'}</td>
+    const timerBadge=t.waitTimerCompleted?'<span title="Дождался экспирации по таймеру" style="opacity:.75;margin-left:4px">⏱️✅</span>':(t.waitTimerUsed?'<span title="Таймер был запущен, но прерван раньше срока" style="opacity:.6;margin-left:4px">⏱️⏹</span>':'');
+    tr.innerHTML=`<td>${t.date}</td><td>${t.time||''}${timerBadge}</td><td><span class="badge sess">${sess.emoji} ${sess.short}</span></td><td>${t.pair}</td><td>${t.direction==='call'?'▲ CALL':'▼ PUT'}</td>
       <td>${t.expiry}</td><td>$${t.stake}</td>
       <td>${ovCount?`<span class="badge ov">${ovCount}×</span>`:'—'}</td>
       <td><span class="badge ${t.result}">${t.result.toUpperCase()}</span></td>
-      <td>${t.quality==='mistake'?'<span class="badge loss">🚨 Ошибка</span>':(t.quality==='reference'?'<span class="badge win">🏆 Эталон</span>':'—')}</td>
+      <td>${t.quality==='mistake'?'<span class="badge loss">❌ Не система</span>':(t.quality==='reference'?'<span class="badge win">✅ Система</span>':'—')}</td>
       <td class="${p>=0?'mint':'coral'}">${fmt(p)}</td>
       <td>${t.emotion}</td>
       <td>${hasImg?`<button class="viewBtn" data-view="${t.id}">👁 смотреть</button>`:'—'}</td>
@@ -1674,7 +1842,7 @@ function renderQuality(sorted){
   const data=[+refWr.toFixed(1), +mistWr.toFixed(1)];
   const colors=[wrColor(refWr).replace('var(--mint)','#00e2a0').replace('var(--coral)','#ff5a6e'), wrColor(mistWr).replace('var(--mint)','#00e2a0').replace('var(--coral)','#ff5a6e')];
   if(qualityChart) qualityChart.destroy();
-  qualityChart=new Chart(canvas,{type:'bar',data:{labels:['🏆 Эталон ('+ref.length+')','🚨 Ошибка ('+mist.length+')'],datasets:[{label:'Винрейт %',data,backgroundColor:colors,borderRadius:8}]},
+  qualityChart=new Chart(canvas,{type:'bar',data:{labels:['✅ Система ('+ref.length+')','❌ Не система ('+mist.length+')'],datasets:[{label:'Винрейт %',data,backgroundColor:colors,borderRadius:8}]},
     options:{animation:{duration:800,easing:'easeOutCubic'},indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:(c)=>c.parsed.x+'% винрейт'}}},
       scales:{x:{min:0,max:100,ticks:{color:'#727d92',callback:v=>v+'%'},grid:{color:'#232733'}},y:{ticks:{color:'#eef1f7',font:{weight:'600'}},grid:{display:false}}}}});
 }
@@ -1923,6 +2091,18 @@ function showGoalCongrats(key, target){
 function hideGoalCongrats(){ document.getElementById('goalCongrats').classList.remove('show'); }
 document.getElementById('goalCongratsClose').onclick=hideGoalCongrats;
 document.getElementById('goalCongrats').addEventListener('click', e=>{ if(e.target.id==='goalCongrats') hideGoalCongrats(); });
+/* if a goal was already marked "done" for its current period but the actual profit
+   no longer reaches the target — e.g. because the trades that earned it were
+   deleted afterwards — the done flag is stale and gets cleared automatically */
+function reconcileGoalDone(key, actual){
+  if(!goalState[key+'Done']) return false;
+  const target=goalState[key+'Target']||0;
+  if(target>0 && actual<target){
+    goalState[key+'Done']=false; goalState[key+'DoneAt']=null;
+    return true;
+  }
+  return false;
+}
 function renderGoals(){
   resetExpiredGoals();
   const now=new Date();
@@ -1932,6 +2112,12 @@ function renderGoals(){
   const dayPnl=trades.filter(t=>t.date===todayStr).reduce((a,t)=>a+pnl(t),0);
   const weekPnl=trades.filter(t=>new Date(t.date+'T00:00:00')>=weekStart).reduce((a,t)=>a+pnl(t),0);
   const monthPnl=trades.filter(t=>new Date(t.date+'T00:00:00')>=monthStart).reduce((a,t)=>a+pnl(t),0);
+  const resetLabels={day:'день',week:'неделю',month:'месяц'};
+  let anyReset=false;
+  [['day',dayPnl],['week',weekPnl],['month',monthPnl]].forEach(([key,actual])=>{
+    if(reconcileGoalDone(key,actual)){ anyReset=true; showToast('↩️ Цель на '+resetLabels[key]+' сброшена — сделки удалены, факт больше не покрывает цель'); }
+  });
+  if(anyReset) saveGoals();
   updateGoalCard('day', dayPnl);
   updateGoalCard('week', weekPnl);
   updateGoalCard('month', monthPnl);
@@ -1982,6 +2168,7 @@ function resetTradeForm(full){
   document.querySelectorAll('#qualityBtns .resbtn').forEach(x=>x.classList.remove('active'));
   document.querySelector('#qualityBtns .resbtn[data-v="reference"]').classList.add('active');
   curQuality='reference';
+  initTimerForEdit(full?'1м':curExp);
   if(!full) return;
   setDir('call');
   curExp='1м';
@@ -2001,6 +2188,7 @@ function resetTradeForm(full){
 
 function populateFormFromTrade(t){
   setDir(t.direction);
+  initTimerForEdit(t.expiry);
   curPair=t.pair; updatePairBtn();
   document.getElementById('f_date').value=t.date;
   document.getElementById('f_time').value=t.time||'';
@@ -2023,6 +2211,12 @@ function populateFormFromTrade(t){
     if(o.payout&&o.payout!==t.payout) row.querySelector('.ov_payout').dataset.touched='1';
     row.querySelectorAll('.ov_res .resbtn').forEach(b=>b.classList.toggle('active', b.dataset.v===o.result));
     row.querySelectorAll('.ov_expiry .chip').forEach(x=>x.classList.toggle('active', x.dataset.v===(o.expiry||'1м')));
+    const dirGroup=row.querySelector('.ov_dir');
+    const oDir=o.direction||t.direction;
+    if(dirGroup){
+      dirGroup.querySelectorAll('.ov_dir_btn').forEach(b=>b.classList.toggle('active', b.dataset.v===oDir));
+      if(o.direction&&o.direction!==t.direction) dirGroup.dataset.touched='1';
+    }
   });
   curEmotion=t.emotion||EMOTIONS[0].l; updateEmoBtn();
   document.getElementById('f_notes').value=t.notes||'';
@@ -2059,7 +2253,8 @@ document.getElementById('addBtn').onclick=()=>{
     stake: parseFloat(row.querySelector('.ov_stake').value)||0,
     payout: parseFloat(row.querySelector('.ov_payout').value)||0,
     result: row.querySelector('.ov_res .resbtn.active').dataset.v,
-    expiry: row.querySelector('.ov_expiry .chip.active')?.dataset.v||'1м'
+    expiry: row.querySelector('.ov_expiry .chip.active')?.dataset.v||'1м',
+    direction: row.querySelector('.ov_dir_btn.active')?.dataset.v||curDir
   }));
   const baseData={
     date:document.getElementById('f_date').value||new Date().toISOString().slice(0,10),
@@ -2070,11 +2265,17 @@ document.getElementById('addBtn').onclick=()=>{
     result:curRes, overlaps, quality:curQuality,
     emotion:curEmotion,
     notes:document.getElementById('f_notes').value,
-    imgBefore:imgBeforeData, imgAfter:imgAfterData
+    imgBefore:imgBeforeData, imgAfter:imgAfterData,
+    waitTimerUsed:timerState.used, waitTimerCompleted:timerState.completed
   };
   if(editingId){
     const idx=trades.findIndex(x=>x.id===editingId);
-    if(idx!==-1) trades[idx]={ ...trades[idx], ...baseData };
+    if(idx!==-1){
+      const prev=trades[idx];
+      baseData.waitTimerUsed = timerState.used || !!prev.waitTimerUsed;
+      baseData.waitTimerCompleted = timerState.completed || !!prev.waitTimerCompleted;
+      trades[idx]={ ...prev, ...baseData };
+    }
     save();
     const btn=document.getElementById('addBtn');
     editingId=null;
@@ -2106,8 +2307,9 @@ document.getElementById('aiBtn').onclick=async ()=>{
   if(trades.length<3){ out.textContent='Добавь хотя бы 3 сделки для анализа.'; return; }
   out.textContent='Анализирую сделки...';
   const data=trades.map(t=>({pair:t.pair,dir:t.direction,exp:t.expiry,stake:t.stake,payout:t.payout,result:t.result,
-    overlaps:(t.overlaps||[]).map(o=>({stake:o.stake,payout:o.payout||t.payout,result:o.result,expiry:o.expiry||'1м'})),
-    emotion:t.emotion,quality:t.quality||'не отмечено',notes:t.notes,date:t.date,time:t.time,weekday:DOW[weekdayIdx(t.date)],session:sessionFor(t.time).short,itogPnl:pnl(t)}));
+    overlaps:(t.overlaps||[]).map(o=>({stake:o.stake,payout:o.payout||t.payout,result:o.result,expiry:o.expiry||'1м',direction:o.direction||t.direction})),
+    emotion:t.emotion,quality:t.quality||'не отмечено',notes:t.notes,date:t.date,time:t.time,weekday:DOW[weekdayIdx(t.date)],session:sessionFor(t.time).short,itogPnl:pnl(t),
+    waitTimer:t.waitTimerCompleted?'дождался таймера до конца':(t.waitTimerUsed?'таймер прерван раньше срока':'таймер не использовался')}));
   const prompt=`Ты — очень опытный, но простой в общении наставник по бинарным опционам на форекс. Объясняй всё максимально понятным, бытовым языком, без сложных терминов и названий стратегий (никаких "мартингейл" и подобных умных слов) — как будто говоришь с другом без опыта в трейдинге. При этом разбор должен быть подробным и по существу.
 
 Данные сделок (включая перекрытия — докрытия убыточной сделки, если они были, максимум 3 на сделку; поле quality означает "reference" — сделка по правилам, "mistake" — нарушение правил):
@@ -2117,7 +2319,7 @@ ${JSON.stringify(data)}
 1. ОШИБКИ — какие конкретные повторяющиеся ошибки видны (пары, время, сессия Азия/Европа/США, дни недели, эмоции, докрытия) и почему это мешает.
 2. ЧТО ХОРОШО — конкретные сильные стороны, которые стоит повторять.
 3. ПРО ПЕРЕКРЫТИЯ — если докрытия были, помогают они спасать деньги или наоборот увеличивают потери, и как поступать в следующий раз.
-4. ЭТАЛОН VS ОШИБКА — сравни, насколько лучше результат у сделок с quality "reference" по сравнению с "mistake", и что это значит на практике.
+4. СИСТЕМА VS НЕ СИСТЕМА — сравни, насколько лучше результат у сделок с quality "reference" (по системе) по сравнению с "mistake" (не по системе), и что это значит на практике.
 5. КАК БЫ Я ПОСТУПИЛ — опиши по шагам, как ты бы действовал в самых частых убыточных ситуациях этого трейдера (конкретная пара/время/эмоция).
 6. 3 ГЛАВНЫХ СОВЕТА на ближайшую неделю, простыми словами.
 Пиши тепло, по-дружески, без вступлений и воды.`;
@@ -2131,8 +2333,9 @@ document.getElementById('errBtn').onclick=async ()=>{
   if(trades.length<3){ out.textContent='Добавь хотя бы 3 сделки для анализа.'; return; }
   out.textContent='Ищу повторяющиеся ошибки...';
   const data=trades.map(t=>({pair:t.pair,dir:t.direction,exp:t.expiry,stake:t.stake,payout:t.payout,result:t.result,
-    overlaps:(t.overlaps||[]).map(o=>({stake:o.stake,payout:o.payout||t.payout,result:o.result,expiry:o.expiry||'1м'})),
-    emotion:t.emotion,quality:t.quality||'не отмечено',notes:t.notes,date:t.date,time:t.time,weekday:DOW[weekdayIdx(t.date)],session:sessionFor(t.time).short,itogPnl:pnl(t)}));
+    overlaps:(t.overlaps||[]).map(o=>({stake:o.stake,payout:o.payout||t.payout,result:o.result,expiry:o.expiry||'1м',direction:o.direction||t.direction})),
+    emotion:t.emotion,quality:t.quality||'не отмечено',notes:t.notes,date:t.date,time:t.time,weekday:DOW[weekdayIdx(t.date)],session:sessionFor(t.time).short,itogPnl:pnl(t),
+    waitTimer:t.waitTimerCompleted?'дождался таймера до конца':(t.waitTimerUsed?'таймер прерван раньше срока':'таймер не использовался')}));
   const prompt=`Ты — наставник по бинарным опционам на форекс, который говорит очень просто и по-дружески, без сложных терминов и названий стратегий.
 
 Твоя ЕДИНСТВЕННАЯ задача сейчас — найти и разложить по полочкам ТОЛЬКО ошибки трейдера. Ничего про плюсы, ничего про то, что хорошо — только ошибки. Никакой воды и вступлений.
