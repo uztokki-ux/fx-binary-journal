@@ -303,6 +303,10 @@ body{transition:background-color .4s ease,color .4s ease;}
 .newsFactSavedNote{font-size:12px;color:var(--muted);line-height:1.5;font-style:italic;}
 .newsFactEditBtn{align-self:flex-start;background:none;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:11px;padding:5px 10px;cursor:pointer;transition:.15s;margin-top:2px;}
 .newsFactEditBtn:hover{border-color:var(--accent);color:var(--accent);}
+.shotBox.factShot{height:84px;max-width:260px;}
+.newsFactThumbWrap{margin-top:2px;}
+.newsFactThumb{max-width:220px;max-height:140px;border-radius:10px;border:1px solid var(--border);display:block;cursor:zoom-in;transition:.2s;}
+.newsFactThumb:hover{border-color:var(--mint);transform:scale(1.02);}
 .newsCurrBadge{font-size:9.5px;font-weight:800;padding:2px 8px;border-radius:8px;background:rgba(245,185,66,.15);color:#f5b942;letter-spacing:.3px;}
 .del{background:none;color:var(--coral);border:none;cursor:pointer;font-size:14px;transition:.15s;}
 .del:hover{transform:scale(1.2);}
@@ -996,6 +1000,7 @@ function sessionFor(time){
 }
 let curPair='EUR/USD', curEmotion=EMOTIONS[0].l;
 let imgBeforeData=null, imgAfterData=null, hoveredShot=null;
+let hoveredNewsFactShot=null, newsFactImgDraft={};
 
 function save(){ try{ localStorage.setItem(KEY,JSON.stringify(trades)); }catch(e){ showToast('⚠️ Не удалось сохранить — в браузере закончилось место (обычно из-за скринов)'); } }
 function ovPnl(o,payout){ return o.result==='win'? o.stake*payout/100 : (o.result==='loss'? -o.stake:0); }
@@ -1264,13 +1269,18 @@ function setupShot(boxId,inputId,phId,prevId,clearId,key,setter){
 setupShot('shotBoxBefore','f_imgBefore','shotPhBefore','shotPrevBefore','clearBefore','Before',v=>imgBeforeData=v);
 setupShot('shotBoxAfter','f_imgAfter','shotPhAfter','shotPrevAfter','clearAfter','After',v=>imgAfterData=v);
 document.addEventListener('paste', async (e)=>{
-  if(!hoveredShot) return;
+  if(!hoveredShot && hoveredNewsFactShot==null) return;
   const items=(e.clipboardData||window.clipboardData).items;
   for(const item of items){
     if(item.type.indexOf('image')!==-1){
       const blob=item.getAsFile(); const url=await resizeImage(blob,480,0.72);
-      if(hoveredShot==='Before'){ imgBeforeData=url; } else { imgAfterData=url; }
-      showShotPreview(hoveredShot,url); e.preventDefault(); break;
+      if(hoveredShot){
+        if(hoveredShot==='Before'){ imgBeforeData=url; } else { imgAfterData=url; }
+        showShotPreview(hoveredShot,url);
+      } else if(hoveredNewsFactShot!=null){
+        setNewsFactShotPreview(hoveredNewsFactShot,url);
+      }
+      e.preventDefault(); break;
     }
   }
 });
@@ -1814,6 +1824,8 @@ setInterval(updateNewsCountdowns, 60000);
    экономическим календарём/брокером), а дальше это просто запоминается в карточке */
 function newsFactFormHTML(i, existing){
   const v=existing||{};
+  newsFactImgDraft[i]=v.img||null;
+  const hasImg=!!newsFactImgDraft[i];
   return `<div class="newsFactForm">
     <label>Фактическое значение (например: 254K при прогнозе 180K)</label>
     <input type="text" class="newsFactValue" id="newsFactValue${i}" value="${v.value?String(v.value).replace(/"/g,'&quot;'):''}" placeholder="Вставь цифру из своего источника данных">
@@ -1824,6 +1836,13 @@ function newsFactFormHTML(i, existing){
     </div>
     <label>Заметка (необязательно)</label>
     <textarea class="newsFactNote" id="newsFactNote${i}" placeholder="Например: как быстро развернулось движение">${v.note?String(v.note):''}</textarea>
+    <label>Скриншот (график/источник данных) — вставь сам</label>
+    <div class="shotBox factShot newsFactShotBox" id="newsFactShotBox${i}">
+      <input type="file" accept="image/*" class="newsFactShotInput" id="newsFactShotInput${i}" hidden>
+      <div class="shotPh newsFactShotPh" id="newsFactShotPh${i}" style="${hasImg?'display:none':'display:flex'}">📷 Скрин к новости<br>клик или наведи + Ctrl+V</div>
+      <img class="newsFactShotPrev" id="newsFactShotPrev${i}" src="${hasImg?newsFactImgDraft[i]:''}" style="${hasImg?'display:block':'display:none'}">
+      <button type="button" class="shotClear newsFactShotClear" id="newsFactShotClear${i}" style="${hasImg?'display:block':'display:none'}">✕</button>
+    </div>
     <button type="button" class="newsFactSaveBtn" data-factsave="${i}">💾 Сохранить факт</button>
   </div>`;
 }
@@ -1832,8 +1851,15 @@ function newsFactSavedHTML(i, fact){
     <div class="newsFactSavedRow"><b>Фактическое значение:</b> ${fact.value||'—'}</div>
     <div class="newsFactSavedRow"><b>Цена:</b> <span class="badge ${fact.dir==='up'?'win':'loss'}">${fact.dir==='up'?'▲ Вверх':'▼ Вниз'}</span></div>
     ${fact.note?`<div class="newsFactSavedNote">${fact.note}</div>`:''}
+    ${fact.img?`<div class="newsFactThumbWrap"><a href="${fact.img}" target="_blank" rel="noopener"><img class="newsFactThumb" src="${fact.img}" alt="Скрин к новости"></a></div>`:''}
     <button type="button" class="newsFactEditBtn" data-factedit="${i}">✏️ Изменить</button>
   </div>`;
+}
+function setNewsFactShotPreview(i,url){
+  newsFactImgDraft[i]=url;
+  const prev=document.getElementById('newsFactShotPrev'+i), ph=document.getElementById('newsFactShotPh'+i), clearBtn=document.getElementById('newsFactShotClear'+i);
+  if(!prev) return;
+  prev.src=url; prev.style.display='block'; ph.style.display='none'; clearBtn.style.display='block';
 }
 function renderNewsFactBody(i, e, editing){
   const body=document.getElementById('newsFactBody'+i);
@@ -1845,6 +1871,19 @@ function wireNewsFactBody(i, e){
   const body=document.getElementById('newsFactBody'+i);
   const dirWrap=body.querySelector('.newsFactDir');
   if(dirWrap){ dirWrap.querySelectorAll('.dirbtn').forEach(b=>b.onclick=()=>{ dirWrap.querySelectorAll('.dirbtn').forEach(x=>x.classList.remove('active')); b.classList.add('active'); }); }
+  const shotBox=body.querySelector('.newsFactShotBox');
+  if(shotBox){
+    const input=document.getElementById('newsFactShotInput'+i);
+    const clearBtn=document.getElementById('newsFactShotClear'+i);
+    shotBox.onclick=()=>input.click();
+    shotBox.addEventListener('mouseenter',()=>{ hoveredNewsFactShot=i; shotBox.classList.add('hoverActive'); });
+    shotBox.addEventListener('mouseleave',()=>{ if(hoveredNewsFactShot===i) hoveredNewsFactShot=null; shotBox.classList.remove('hoverActive'); });
+    input.onchange=async ()=>{ const f=input.files[0]; if(!f) return; const url=await resizeImage(f,480,0.72); setNewsFactShotPreview(i,url); };
+    clearBtn.onclick=(ev)=>{ ev.stopPropagation(); newsFactImgDraft[i]=null; input.value='';
+      document.getElementById('newsFactShotPrev'+i).style.display='none';
+      document.getElementById('newsFactShotPh'+i).style.display='flex';
+      clearBtn.style.display='none'; };
+  }
   const saveBtn=body.querySelector('[data-factsave]');
   if(saveBtn){
     saveBtn.onclick=(ev)=>{
@@ -1852,8 +1891,9 @@ function wireNewsFactBody(i, e){
       const value=document.getElementById('newsFactValue'+i).value.trim();
       const dirBtn=dirWrap ? dirWrap.querySelector('.dirbtn.active') : null;
       const note=document.getElementById('newsFactNote'+i).value.trim();
-      if(!value && !dirBtn && !note){ return; }
-      newsFacts[newsFactKey(e)]={ value, dir:dirBtn?dirBtn.dataset.v:'up', note, savedAt:Date.now() };
+      const img=newsFactImgDraft[i]||null;
+      if(!value && !dirBtn && !note && !img){ return; }
+      newsFacts[newsFactKey(e)]={ value, dir:dirBtn?dirBtn.dataset.v:'up', note, img, savedAt:Date.now() };
       saveNewsFacts();
       renderNewsFactBody(i, e, false);
       const badge=document.querySelector(`[data-newsfactbadge="${i}"]`);
