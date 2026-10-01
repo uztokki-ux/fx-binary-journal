@@ -1146,15 +1146,18 @@ function toggleCollapsible(body,btn){
     body.style.maxHeight=target+'px';
     body.style.opacity='1';
     freeOpenAncestors(body);
-    const onEnd=(e)=>{
-      if(e.propertyName==='max-height'){
-        body.removeEventListener('transitionend', onEnd); body._toggleEnd=null;
-        if(!body.classList.contains('closed')){ body.style.maxHeight='none'; body.style.overflow='visible'; }
-        freeOpenAncestors(body);
-      }
+    const release=()=>{
+      body.removeEventListener('transitionend', onEnd); body._toggleEnd=null;
+      if(!body.classList.contains('closed')){ body.style.maxHeight='none'; body.style.overflow='visible'; }
+      freeOpenAncestors(body);
     };
+    const onEnd=(e)=>{ if(e.propertyName==='max-height') release(); };
     body._toggleEnd=onEnd;
     body.addEventListener('transitionend', onEnd);
+    // transitionend doesn't reliably fire for a max-height change from a class-removed
+    // 'none' starting point in every engine — fall back to releasing it manually so a
+    // collapsible never gets stuck clipping content that's added to it later
+    setTimeout(()=>{ if(body._toggleEnd===onEnd) release(); }, 450);
   } else {
     const current=(!body.style.maxHeight||body.style.maxHeight==='none')?body.scrollHeight:parseFloat(body.style.maxHeight);
     body.style.overflow='hidden';
@@ -1866,6 +1869,10 @@ function renderNewsFactBody(i, e, editing){
   const fact=newsFacts[newsFactKey(e)];
   body.innerHTML=(fact && !editing) ? newsFactSavedHTML(i, fact) : newsFactFormHTML(i, fact);
   wireNewsFactBody(i, e);
+  // the collapsible wrapping this body may already be open with its height pinned to the
+  // PREVIOUS content (saved view vs. edit form are different heights) — re-measure it now
+  // instead of relying on the open-transition's own (not always reliable) cleanup
+  if(!body.classList.contains('closed')){ body.style.maxHeight='none'; body.style.overflow='visible'; freeOpenAncestors(body); }
 }
 function wireNewsFactBody(i, e){
   const body=document.getElementById('newsFactBody'+i);
