@@ -285,6 +285,24 @@ body{transition:background-color .4s ease,color .4s ease;}
 .viewpointItem{font-size:12px;color:var(--muted);line-height:1.55;padding:9px 11px;margin-top:6px;background:rgba(255,255,255,.02);border-radius:10px;border:1px solid var(--border);animation:fadeUp .3s ease both;}
 .viewpointNote{font-size:10px;color:var(--muted);opacity:.7;margin-top:8px;font-style:italic;line-height:1.4;}
 .newsMetaRow b{color:var(--text);font-weight:700;}
+.newsSubToggle.fact{background:rgba(0,226,160,.07);border-color:rgba(0,226,160,.25);color:var(--mint);}
+.newsSubToggle.fact:hover{background:rgba(0,226,160,.13);}
+.newsFactBadge{font-size:10px;color:var(--mint);margin-left:6px;font-weight:700;white-space:nowrap;}
+.newsFactBody{padding:10px 12px;margin-top:6px;background:rgba(0,226,160,.04);border-left:2px solid var(--mint);border-radius:0 10px 10px 0;animation:fadeUp .3s ease both;}
+.newsFactForm{display:flex;flex-direction:column;gap:8px;}
+.newsFactForm label{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;}
+.newsFactForm input,.newsFactForm textarea{width:100%;background:#0d1017;border:2px solid var(--border);border-radius:9px;color:var(--text);padding:8px 10px;font-size:12.5px;font-family:inherit;transition:.15s;}
+.newsFactForm input:focus,.newsFactForm textarea:focus{outline:none;border-color:var(--accent);}
+.newsFactForm textarea{resize:vertical;min-height:44px;}
+.newsFactDir{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.newsFactSaveBtn{align-self:flex-start;padding:8px 16px;border-radius:9px;border:none;background:linear-gradient(90deg,var(--mint),#00c48c);color:#04140f;font-weight:800;font-size:12px;cursor:pointer;transition:.18s;}
+.newsFactSaveBtn:hover{transform:translateY(-1px);}
+.newsFactSaved{display:flex;flex-direction:column;gap:6px;}
+.newsFactSavedRow{font-size:12.5px;color:#dde3f0;}
+.newsFactSavedRow b{color:var(--text);}
+.newsFactSavedNote{font-size:12px;color:var(--muted);line-height:1.5;font-style:italic;}
+.newsFactEditBtn{align-self:flex-start;background:none;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:11px;padding:5px 10px;cursor:pointer;transition:.15s;margin-top:2px;}
+.newsFactEditBtn:hover{border-color:var(--accent);color:var(--accent);}
 .newsCurrBadge{font-size:9.5px;font-weight:800;padding:2px 8px;border-radius:8px;background:rgba(245,185,66,.15);color:#f5b942;letter-spacing:.3px;}
 .del{background:none;color:var(--coral);border:none;cursor:pointer;font-size:14px;transition:.15s;}
 .del:hover{transform:scale(1.2);}
@@ -799,7 +817,7 @@ const THEMES={
   violet:{name:'Фиолет',vars:{'--bg':'#0f0a1a','--panel':'#181026','--panel2':'#201432','--border':'#332249','--text':'#f2edfa','--muted':'#8b7ba3','--mint':'#22e2a0','--coral':'#ff6b9d','--accent':'#a56cff'}}
 };
 const SETTINGS_KEY='fxbo_settings_v1';
-let appSettings={theme:'dark', anim:true, confetti:true, draft:true, sound:true, soundType:'chime', confirmDelete:true};
+let appSettings={theme:'dark', anim:true, confetti:true, draft:true, sound:true, soundType:'soft', confirmDelete:true};
 try{ const s=JSON.parse(localStorage.getItem(SETTINGS_KEY)); if(s) appSettings=Object.assign(appSettings,s); }catch(e){}
 function saveSettings(){ try{ localStorage.setItem(SETTINGS_KEY, JSON.stringify(appSettings)); }catch(e){} }
 function applyTheme(key){
@@ -813,17 +831,20 @@ applyTheme(appSettings.theme);
 
 /* sound notifications — synthesized with Web Audio, no external files */
 const SOUND_TYPES={
-  chime:{name:'Колокольчик', notes:[659.25,987.77,1318.51], wave:'sine', gap:0.09},
   soft:{name:'Мягкий тон', notes:[523.25,659.25], wave:'sine', gap:0.1},
   coin:{name:'Монетка', notes:[988,1568,1976], wave:'square', gap:0.07},
   chord:{name:'Аккорд успеха', notes:[523.25,659.25,783.99], wave:'sine', gap:0.09},
   marimba:{name:'Маримба', notes:[440,554.37,659.25], wave:'triangle', gap:0.1},
-  rise:{name:'Восход', notes:[392,523.25,659.25,783.99], wave:'sine', gap:0.07},
   nova:{name:'Нова', wave:'sawtooth', sweep:{from:220,to:1100,dur:0.32}, detune:8},
-  pulse:{name:'Пульсар', notes:[880,1108.73,1318.51,1760], wave:'sawtooth', gap:0.055},
   crystal:{name:'Кристалл', notes:[783.99,987.77,1174.66,1567.98], wave:'sine', gap:0.075},
-  aurora:{name:'Аврора', wave:'triangle', sweep:{from:300,to:820,dur:0.42}, detune:6}
+  aurora:{name:'Аврора', wave:'triangle', sweep:{from:300,to:820,dur:0.42}, detune:6},
+  matrix:{name:'Матрица', notes:[1174.66,932.33,739.99,587.33,466.16], wave:'square', gap:0.045},
+  quantum:{name:'Квант', wave:'sawtooth', sweep:{from:160,to:1800,dur:0.26}, detune:14}
 };
+// a sound saved by a previous version of the app (chime/pulse/rise) no longer exists —
+// fall back so the settings UI always has a real swatch highlighted
+if(!SOUND_TYPES[appSettings.soundType]) appSettings.soundType='soft';
+const DEFAULT_SOUND_TYPE='soft';
 let audioCtx=null;
 function getAudioCtx(){
   if(!audioCtx){ try{ audioCtx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ audioCtx=null; } }
@@ -833,7 +854,7 @@ function getAudioCtx(){
 function playChime(type, big){
   if(!appSettings.sound) return;
   const ctx=getAudioCtx(); if(!ctx) return;
-  const def=SOUND_TYPES[type]||SOUND_TYPES[appSettings.soundType]||SOUND_TYPES.chime;
+  const def=SOUND_TYPES[type]||SOUND_TYPES[appSettings.soundType]||SOUND_TYPES[DEFAULT_SOUND_TYPE];
   const now=ctx.currentTime;
   if(def.sweep){
     const {from,to,dur}=def.sweep;
@@ -1788,11 +1809,70 @@ function updateNewsCountdowns(){
 }
 setInterval(updateNewsCountdowns, 60000);
 
+/* "Факт по новости" — приложение не подключено к живому рынку, поэтому фактический
+   результат и то, куда удержала цена, трейдер вписывает сам (сверившись со своим
+   экономическим календарём/брокером), а дальше это просто запоминается в карточке */
+function newsFactFormHTML(i, existing){
+  const v=existing||{};
+  return `<div class="newsFactForm">
+    <label>Фактическое значение (например: 254K при прогнозе 180K)</label>
+    <input type="text" class="newsFactValue" id="newsFactValue${i}" value="${v.value?String(v.value).replace(/"/g,'&quot;'):''}" placeholder="Вставь цифру из своего источника данных">
+    <label>Куда ушла и удержала цена</label>
+    <div class="dirbtns small newsFactDir" id="newsFactDir${i}">
+      <button type="button" class="dirbtn call small${v.dir==='up'?' active':''}" data-v="up">▲ Вверх</button>
+      <button type="button" class="dirbtn put small${v.dir==='down'?' active':''}" data-v="down">▼ Вниз</button>
+    </div>
+    <label>Заметка (необязательно)</label>
+    <textarea class="newsFactNote" id="newsFactNote${i}" placeholder="Например: как быстро развернулось движение">${v.note?String(v.note):''}</textarea>
+    <button type="button" class="newsFactSaveBtn" data-factsave="${i}">💾 Сохранить факт</button>
+  </div>`;
+}
+function newsFactSavedHTML(i, fact){
+  return `<div class="newsFactSaved">
+    <div class="newsFactSavedRow"><b>Фактическое значение:</b> ${fact.value||'—'}</div>
+    <div class="newsFactSavedRow"><b>Цена:</b> <span class="badge ${fact.dir==='up'?'win':'loss'}">${fact.dir==='up'?'▲ Вверх':'▼ Вниз'}</span></div>
+    ${fact.note?`<div class="newsFactSavedNote">${fact.note}</div>`:''}
+    <button type="button" class="newsFactEditBtn" data-factedit="${i}">✏️ Изменить</button>
+  </div>`;
+}
+function renderNewsFactBody(i, e, editing){
+  const body=document.getElementById('newsFactBody'+i);
+  const fact=newsFacts[newsFactKey(e)];
+  body.innerHTML=(fact && !editing) ? newsFactSavedHTML(i, fact) : newsFactFormHTML(i, fact);
+  wireNewsFactBody(i, e);
+}
+function wireNewsFactBody(i, e){
+  const body=document.getElementById('newsFactBody'+i);
+  const dirWrap=body.querySelector('.newsFactDir');
+  if(dirWrap){ dirWrap.querySelectorAll('.dirbtn').forEach(b=>b.onclick=()=>{ dirWrap.querySelectorAll('.dirbtn').forEach(x=>x.classList.remove('active')); b.classList.add('active'); }); }
+  const saveBtn=body.querySelector('[data-factsave]');
+  if(saveBtn){
+    saveBtn.onclick=(ev)=>{
+      ev.stopPropagation();
+      const value=document.getElementById('newsFactValue'+i).value.trim();
+      const dirBtn=dirWrap ? dirWrap.querySelector('.dirbtn.active') : null;
+      const note=document.getElementById('newsFactNote'+i).value.trim();
+      if(!value && !dirBtn && !note){ return; }
+      newsFacts[newsFactKey(e)]={ value, dir:dirBtn?dirBtn.dataset.v:'up', note, savedAt:Date.now() };
+      saveNewsFacts();
+      renderNewsFactBody(i, e, false);
+      const badge=document.querySelector(`[data-newsfactbadge="${i}"]`);
+      if(badge) badge.innerHTML='<span class="newsFactBadge" title="Факт записан">📍 факт записан</span>';
+      showToast('✅ Факт по новости сохранён');
+    };
+  }
+  const editBtn=body.querySelector('[data-factedit]');
+  if(editBtn){ editBtn.onclick=(ev)=>{ ev.stopPropagation(); renderNewsFactBody(i, e, true); }; }
+}
+
 function renderNews(){
   const box=document.getElementById('newsList');
   const now=new Date();
   const allEvents=[...NEWS_EVENTS, ...generateRecurringNews(6)];
-  const upcoming=allEvents.map(e=>({...e,d:new Date(e.date+'T'+(e.time||'12:00')+':00')})).filter(e=>e.d>=now || (new Date(e.date+'T23:59:59'))>=now).sort((a,b)=>a.d-b.d).slice(0,14);
+  // keep upcoming events (no limit) plus recently released ones for a few days so there's
+  // time to come back and log what actually happened before the card disappears
+  const cutoffPast=new Date(now.getTime()-3*24*60*60*1000);
+  const upcoming=allEvents.map(e=>({...e,d:new Date(e.date+'T'+(e.time||'12:00')+':00')})).filter(e=>e.d>=cutoffPast).sort((a,b)=>a.d-b.d).slice(0,16);
   newsUpcomingCache=upcoming;
   if(!upcoming.length){ box.innerHTML='<div class="empty">Ближайших событий не найдено.</div>'; return; }
   box.innerHTML=upcoming.map((e,i)=>{
@@ -1802,10 +1882,12 @@ function renderNews(){
     const downEffect=isUsd?'EUR/USD ⬆':'EUR/USD ⬇';
     const upTagClass=upEffect.includes('⬆')?'up':'down';
     const downTagClass=downEffect.includes('⬆')?'up':'down';
+    const released=e.d<=now;
+    const fact=newsFacts[newsFactKey(e)];
     return `<div class="newsCard" style="animation-delay:${i*0.06}s">
       <div class="newsItem newsClickable" data-newshead="${i}">
         <div class="newsIcon">${e.icon}</div>
-        <div class="newsBody"><div class="newsTitle">${e.title}</div><div class="newsDate">${e.d.toLocaleDateString('ru-RU',{day:'2-digit',month:'long',year:'numeric'})}, ${e.time||'—'} МСК</div></div>
+        <div class="newsBody"><div class="newsTitle">${e.title}</div><div class="newsDate">${e.d.toLocaleDateString('ru-RU',{day:'2-digit',month:'long',year:'numeric'})}, ${e.time||'—'} МСК<span data-newsfactbadge="${i}">${fact?'<span class="newsFactBadge" title="Факт записан">📍 факт записан</span>':''}</span></div></div>
         <div class="newsRight"><div class="newsCountdown ${c.cls==='mint'||c.cls==='coral'?c.cls:''}" style="${c.cls==='#f5b942'?'color:#f5b942':''}" data-newscountdown="${i}">${c.label}</div><div class="newsImpact">${e.impact} важность</div></div>
         <button type="button" class="collToggle closed" id="newsChev${i}" tabindex="-1">▾</button>
       </div>
@@ -1818,6 +1900,8 @@ function renderNews(){
           <div class="newsMetaRow"><span><b>Долгосрочно:</b> ${e.longterm}</span></div>
           ${e.tip?`<div class="newsWhy">💡 <b>Как торговать:</b> ${e.tip}</div>`:''}
           ${e.pairs?`<div class="newsMetaRow"><span><b>Также затронет:</b> ${e.pairs}</span></div>`:''}
+          ${released?`<div class="newsSubToggle fact" data-facttoggle="${i}"><span>📍 Факт по этой новости</span><span class="collToggle closed" id="newsFactChev${i}">▾</span></div>
+          <div class="collapsible closed" id="newsFactBody${i}"></div>`:''}
           <div class="newsSubToggle ai" data-aitoggle="${i}"><span>🤖 Мнение ИИ — чего ждать от этой новости</span><span class="collToggle closed" id="newsAiChev${i}">▾</span></div>
           <div class="collapsible closed" id="newsAiBody${i}"><div class="aiOpinionText">${aiNewsOpinion(e)}</div></div>
           <div class="newsSubToggle viewpoints" data-vptoggle="${i}"><span>💬 Другие точки зрения трейдеров</span><span class="collToggle closed" id="newsVpChev${i}">▾</span></div>
@@ -1842,6 +1926,13 @@ function renderNews(){
     const vpBody=document.getElementById('newsVpBody'+i);
     const vpChev=document.getElementById('newsVpChev'+i);
     vpHead.onclick=(ev)=>{ ev.stopPropagation(); toggleCollapsible(vpBody,vpChev); };
+    if(e.d<=now){
+      renderNewsFactBody(i, e, false);
+      const factHead=box.querySelector(`[data-facttoggle="${i}"]`);
+      const factBody=document.getElementById('newsFactBody'+i);
+      const factChev=document.getElementById('newsFactChev'+i);
+      factHead.onclick=(ev)=>{ ev.stopPropagation(); toggleCollapsible(factBody,factChev); };
+    }
   });
 }
 
@@ -1996,6 +2087,15 @@ document.getElementById('mmRunBtn').onclick=runMoneyMgmt;
 runMoneyMgmt();
 
 /* goals */
+/* user-recorded facts for already-released news events — the app has no live market
+   feed, so "what actually came out" is logged by the trader themselves after checking
+   their broker/economic calendar, and remembered here for next time they open the card */
+const NEWS_FACTS_KEY='fxbo_newsFacts_v1';
+let newsFacts={};
+try{ const savedF=JSON.parse(localStorage.getItem(NEWS_FACTS_KEY)); if(savedF) newsFacts=savedF; }catch(e){}
+function saveNewsFacts(){ try{ localStorage.setItem(NEWS_FACTS_KEY, JSON.stringify(newsFacts)); }catch(e){} }
+function newsFactKey(e){ return e.title+'|'+e.date; }
+
 const GOALS_KEY='fxbo_goals_v1';
 let goalState={ dayTarget:10, weekTarget:50, monthTarget:200, dayDone:false, weekDone:false, monthDone:false, dayDoneAt:null, weekDoneAt:null, monthDoneAt:null };
 try{ const saved=JSON.parse(localStorage.getItem(GOALS_KEY)); if(saved) goalState=Object.assign(goalState,saved); }catch(e){}
