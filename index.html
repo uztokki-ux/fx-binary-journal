@@ -236,6 +236,17 @@ tbody tr:hover{background:rgba(255,255,255,.03)}
 .switch .slider:before{content:"";position:absolute;height:18px;width:18px;left:3px;top:3px;background:#eef1f7;border-radius:50%;transition:.25s;}
 .switch input:checked + .slider{background:var(--mint);}
 .switch input:checked + .slider:before{transform:translateX(18px);}
+.quickLine{width:100%;margin-bottom:12px;font-size:12.5px;}
+.tgInput{width:100%;margin-top:10px;font-size:12.5px;}
+.tgBtns{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
+.tgBtn{background:rgba(108,140,255,.12);border:1px solid rgba(108,140,255,.35);color:var(--accent);border-radius:9px;padding:7px 11px;font-size:11.5px;font-weight:700;cursor:pointer;transition:.2s;}
+.tgBtn:hover{transform:translateY(-1px);background:rgba(108,140,255,.2);}
+.tgBtn.ghost{background:none;border-color:var(--border);color:var(--muted);}
+.tgStatus{font-size:11.5px;color:var(--muted);margin-top:8px;line-height:1.5;}
+.tgStatus.ok{color:var(--mint);} .tgStatus.err{color:var(--coral);}
+.tgHelp{margin-top:8px;font-size:11px;color:var(--muted);line-height:1.6;}
+.tgHelp summary{cursor:pointer;color:var(--accent);font-weight:700;}
+.tgHelp div{margin-top:6px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.03);border:1px solid var(--border);}
 .settingsNote{font-size:11px;color:var(--muted);line-height:1.6;padding:12px 14px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid var(--border);}
 .quickRepeatBtn{background:rgba(108,140,255,.12);border:1px solid rgba(108,140,255,.35);color:var(--accent);border-radius:10px;padding:9px 14px;font-size:12.5px;font-weight:700;cursor:pointer;transition:.2s;margin-bottom:12px;display:inline-flex;align-items:center;gap:6px;}
 .quickRepeatBtn:hover{background:rgba(108,140,255,.2);transform:translateY(-1px);}
@@ -596,6 +607,7 @@ body{transition:background-color .4s ease,color .4s ease;}
       <button type="button" id="cancelEditBtn">Отмена</button>
     </div>
     <button type="button" class="quickRepeatBtn" id="quickRepeatBtn">⚡ Повторить последнюю сделку</button>
+    <input type="text" id="quickLine" class="quickLine" autocomplete="off" placeholder="⚡ Быстрый ввод строкой: EURUSD call 1м $10 85% win — и Enter">
     <div class="dirbtns">
       <button type="button" class="dirbtn call active" id="btnCall">▲ CALL (вверх)</button>
       <button type="button" class="dirbtn put" id="btnPut">▼ PUT (вниз)</button>
@@ -793,7 +805,30 @@ body{transition:background-color .4s ease,color .4s ease;}
       <div class="soundGrid" id="soundGrid"></div>
     </div>
 
-    <div class="settingsNote">💡 Полностью автоматическая запись сделок прямо с брокера технически невозможна в браузерном дневнике — сайт не имеет доступа к торговой площадке. Зато есть два рабочих способа ускорить ввод: кнопка «⚡ Повторить последнюю сделку» в форме новой сделки заполняет пару/направление/ставку в один клик, а автосохранение черновика (выше) не даст потерять уже введённые данные, если случайно закроешь вкладку.</div>
+    <div class="settingsSection">
+      <div class="settingsLabel">✈️ Импорт сделок из Telegram</div>
+      <div class="settingsToggleRow">
+        <span>Забирать сделки из моего бота</span>
+        <label class="switch"><input type="checkbox" id="toggleTg"><span class="slider"></span></label>
+      </div>
+      <input type="password" id="tgToken" class="tgInput" autocomplete="off" spellcheck="false" placeholder="Токен бота от @BotFather">
+      <div class="tgBtns">
+        <button type="button" class="tgBtn" id="tgSaveBtn">💾 Сохранить токен</button>
+        <button type="button" class="tgBtn" id="tgPullBtn">⬇️ Забрать сейчас</button>
+        <button type="button" class="tgBtn ghost" id="tgUnlinkBtn">Отвязать чат</button>
+      </div>
+      <div class="tgStatus" id="tgStatus">Выключено</div>
+      <details class="tgHelp">
+        <summary>Как подключить и в каком формате писать</summary>
+        <div>1) В Telegram открой @BotFather → /newbot → скопируй токен сюда.<br>
+        2) Напиши своему боту любое сообщение — он привяжется к твоему чату (чужие сообщения игнорируются).<br>
+        3) Присылай сделки строкой, например: <b>EURUSD call 1м $10 85% win</b><br>
+        Можно по-русски: <i>Евро доллар вверх 2м 10$ плюс</i> · результат также <i>loss/минус/слив</i>, <i>draw/ничья</i>; можно указать прибыль: <i>+8.5</i> или <i>-10</i>. Время берётся из сообщения (или напиши 14:35). Фото-скрин, отправленное боту, прикрепится к последней сделке.<br>
+        Дневник забирает сообщения, пока открыт (раз в 30 сек), Telegram хранит их 24 часа. Работает на версии с GitHub Pages — в окне Artifact внешние запросы закрыты.</div>
+      </details>
+    </div>
+
+    <div class="settingsNote">💡 Прямого подключения к брокеру у браузерного дневника нет, зато сделки можно присылать себе в Telegram-бота (выше) или вставлять строкой в поле «⚡ Быстрый ввод» в форме новой сделки. Кнопка «⚡ Повторить последнюю сделку» и автосохранение черновика тоже ускоряют ввод.</div>
   </div>
 </div>
 
@@ -1475,8 +1510,9 @@ function render(){
     const tr=document.createElement('tr');
     const sess=sessionFor(t.time);
     const verdict=analyzeTrade(t).verdict;
+    const tgBadge=t.source==='tg'?'<span title="Добавлено из Telegram" style="margin-left:4px">✈️</span>':'';
     const timerBadge=t.waitTimerCompleted?'<span title="Выжидание позиции перед входом выдержано по таймеру" style="opacity:.75;margin-left:4px">⏱️✅</span>':(t.waitTimerUsed?'<span title="Выжидание позиции было запущено, но прервано раньше срока" style="opacity:.6;margin-left:4px">⏱️⏹</span>':'');
-    tr.innerHTML=`<td>${t.date}</td><td>${t.time||''}${timerBadge}</td><td><span class="badge sess">${sess.emoji} ${sess.short}</span></td><td>${t.pair}</td><td>${t.direction==='call'?'▲ CALL':'▼ PUT'}</td>
+    tr.innerHTML=`<td>${t.date}</td><td>${t.time||''}${timerBadge}${tgBadge}</td><td><span class="badge sess">${sess.emoji} ${sess.short}</span></td><td>${t.pair}</td><td>${t.direction==='call'?'▲ CALL':'▼ PUT'}</td>
       <td>${t.expiry}</td><td>$${t.stake}</td>
       <td>${ovCount?`<span class="badge ov">${ovCount}×</span>`:'—'}</td>
       <td><span class="badge ${t.result}">${t.result.toUpperCase()}</span></td>
@@ -2598,6 +2634,156 @@ setInterval(()=>{
   const newPanel=document.querySelector('.tabPanel[data-tab="new"]');
   if(newPanel && newPanel.classList.contains('active')) saveDraftIfEnabled();
 }, 4000);
+
+/* ===== Быстрый ввод строкой + импорт из Telegram ===== */
+const TG_CUR=['usd','eur','gbp','jpy','chf','cad','aud','nzd','try','zar','mxn'];
+function parseTradeText(raw, ts){
+  let s=' '+String(raw||'').toLowerCase().replace(/(\d),(\d)/g,'$1.$2')+' ';
+  const L='a-zа-яё';
+  const word=(alts)=>new RegExp('(?<![' + L + '])(?:' + alts + ')(?![' + L + '])');
+  const out={}; const missing=[];
+  // пара
+  let m, re=/([a-z]{3})\s*[\/_-]?\s*([a-z]{3})/g;
+  while((m=re.exec(s))){ if(TG_CUR.includes(m[1])&&TG_CUR.includes(m[2])&&m[1]!==m[2]){ out.pair=(m[1]+'/'+m[2]).toUpperCase(); s=s.slice(0,m.index)+' '+s.slice(m.index+m[0].length); break; } }
+  if(!out.pair){
+    const ru={'евро':'EUR','доллар':'USD','фунт':'GBP','иена':'JPY','йена':'JPY','франк':'CHF','канад':'CAD','австрал':'AUD','новозел':'NZD'};
+    const found=[]; Object.keys(ru).forEach(k=>{ const ix=s.indexOf(k); if(ix>=0) found.push([ix,ru[k]]); });
+    found.sort((a,b)=>a[0]-b[0]);
+    if(found.length>=2&&found[0][1]!==found[1][1]) out.pair=found[0][1]+'/'+found[1][1];
+  }
+  // направление
+  if(word('call|up|buy|long|вверх|выше|повыш|рост').test(s)||/[▲⬆📈]/.test(s)) out.direction='call';
+  else if(word('put|down|sell|short|вниз|ниже|пониж|падени').test(s)||/[▼⬇📉]/.test(s)) out.direction='put';
+  // время HH:MM
+  m=s.match(/(?<!\d)([01]?\d|2[0-3]):([0-5]\d)(?!\d)/);
+  if(m){ out.time=String(m[1]).padStart(2,'0')+':'+m[2]; s=s.replace(m[0],' '); }
+  // экспирация
+  m=s.match(/(\d+)\s*(?:мин(?:ут[а-я]*)?|min(?:ute)?s?|м|m)(?![a-zа-яё])/);
+  if(m){ const n=parseInt(m[1],10); out.expiry=(n>=1&&n<=5?n:1)+'м'; s=s.replace(m[0],' '); }
+  else { m=s.match(/(\d+)\s*(?:сек|с|s|sec)(?![a-zа-яё])/); if(m){ const n=Math.round(parseInt(m[1],10)/60); out.expiry=(n>=1&&n<=5?n:1)+'м'; s=s.replace(m[0],' '); } }
+  // выплата
+  m=s.match(/(?:выплат[а-я]*|payout)\s*[:=]?\s*(\d{2,3}(?:\.\d+)?)/)||s.match(/(\d{2,3}(?:\.\d+)?)\s*%/);
+  if(m){ out.payout=parseFloat(m[1]); s=s.replace(m[0],' '); }
+  // результат словами
+  if(word('win|won|profit|плюс|выигр[а-я]*|прибыл[а-я]*|профит|успех').test(s)||/[✅🟢]/.test(s)) out.result='win';
+  else if(word('loss|lose|lost|минус|проигр[а-я]*|слив[а-я]*|убыт[а-я]*').test(s)||/[❌🔴]/.test(s)) out.result='loss';
+  else if(word('draw|ничь[а-я]*|возврат|refund').test(s)) out.result='draw';
+  // прибыль со знаком
+  let profit=null;
+  m=s.match(/(?<![\w.])([+\-−–])\s*\$?\s*(\d+(?:\.\d+)?)/);
+  if(m){ profit=(m[1]==='+'?1:-1)*parseFloat(m[2]); if(!out.result) out.result=profit>0?'win':(profit<0?'loss':'draw'); s=s.replace(m[0],' '); }
+  // ставка
+  m=s.match(/(?:ставк[а-я]*|stake|bet)\s*[:=]?\s*\$?\s*(\d+(?:\.\d+)?)/)||s.match(/\$\s*(\d+(?:\.\d+)?)/)||s.match(/(\d+(?:\.\d+)?)\s*(?:\$|usd|долл[а-я]*|дол)(?![a-zа-яё])/);
+  if(!m){ const nums=s.match(/(?<![\w.])\d+(?:\.\d+)?(?![\w.])/g); if(nums&&nums.length) m=[null,nums[0]]; }
+  if(m) out.stake=parseFloat(m[1]);
+  if(out.result==='win'&&profit&&out.stake&&!out.payout) out.payout=Math.max(1,Math.round(profit/out.stake*100));
+  if(!out.pair) missing.push('пара'); if(!out.direction) missing.push('направление (call/put)');
+  if(!out.stake) missing.push('ставка'); if(!out.result) missing.push('результат (win/loss)');
+  const d=ts?new Date(ts):new Date();
+  const p2=n=>String(n).padStart(2,'0');
+  const last=trades.length?trades[trades.length-1]:null;
+  const trade={
+    date:d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate()),
+    time:out.time||(p2(d.getHours())+':'+p2(d.getMinutes())),
+    pair:out.pair, direction:out.direction, expiry:out.expiry||'1м',
+    stake:out.stake, payout:out.payout||(last&&last.payout)||80, result:out.result,
+    quality:'', emotion:EMOTIONS[0].l, overlaps:[], notes:'', imgBefore:null, imgAfter:null
+  };
+  return {ok:!missing.length, missing, trade};
+}
+
+/* быстрый ввод в форме новой сделки: разбираем строку и заполняем форму (сохранить — вручную) */
+function applyQuickLine(){
+  const inp=document.getElementById('quickLine'); const txt=inp.value.trim(); if(!txt) return;
+  const r=parseTradeText(txt);
+  if(!r.ok){ showToast('⚠️ Не хватает: '+r.missing.join(', ')); return; }
+  const keepB=imgBeforeData, keepA=imgAfterData, notes=document.getElementById('f_notes').value;
+  populateFormFromTrade(r.trade);
+  document.getElementById('f_notes').value=notes;
+  if(keepB){ imgBeforeData=keepB; showShotPreview('Before',keepB); }
+  if(keepA){ imgAfterData=keepA; showShotPreview('After',keepA); }
+  inp.value=''; showToast('⚡ Форма заполнена — проверь и нажми «Записать сделку»');
+}
+document.getElementById('quickLine').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); applyQuickLine(); } });
+
+/* Telegram: getUpdates напрямую из браузера, токен хранится только в localStorage этого браузера */
+const TG_KEY='fxbo_tg_v1';
+let tgCfg={token:'',enabled:false,offset:0,chatId:null};
+try{ const sv=JSON.parse(localStorage.getItem(TG_KEY)); if(sv) tgCfg=Object.assign(tgCfg,sv); }catch(e){}
+function saveTg(){ try{ localStorage.setItem(TG_KEY,JSON.stringify(tgCfg)); }catch(e){} }
+let tgBusy=false, tgTimer=null;
+function tgStatus(msg,cls){ const el=document.getElementById('tgStatus'); el.textContent=msg; el.className='tgStatus'+(cls?' '+cls:''); }
+function tgApi(method,params){
+  const q=params?'?'+Object.entries(params).map(([k,v])=>k+'='+encodeURIComponent(v)).join('&'):'';
+  return fetch('https://api.telegram.org/bot'+tgCfg.token+'/'+method+q).then(r=>r.json());
+}
+function tgReply(chatId,text){ if(!tgCfg.token) return; tgApi('sendMessage',{chat_id:chatId,text}).catch(()=>{}); }
+async function tgPhotoToDataUrl(photos){
+  const best=photos[photos.length-1];
+  const f=await tgApi('getFile',{file_id:best.file_id});
+  if(!f.ok) throw new Error('getFile');
+  const resp=await fetch('https://api.telegram.org/file/bot'+tgCfg.token+'/'+f.result.file_path);
+  return resizeImage(await resp.blob(),480,0.72);
+}
+async function tgPoll(manual){
+  if(tgBusy) return; if(!tgCfg.token){ if(manual) tgStatus('Сначала вставь токен бота','err'); return; }
+  tgBusy=true;
+  try{
+    const j=await tgApi('getUpdates',{offset:tgCfg.offset,timeout:0,allowed_updates:'["message"]'});
+    if(!j.ok){ tgStatus('Telegram: '+(j.description||'ошибка')+(j.error_code===401?' — проверь токен':''),'err'); return; }
+    let added=0, photos=0;
+    for(const u of j.result){
+      tgCfg.offset=u.update_id+1;
+      const m=u.message; if(!m||!m.chat) continue;
+      if(!tgCfg.chatId){ tgCfg.chatId=m.chat.id; showToast('✈️ Бот привязан к твоему чату'); tgReply(m.chat.id,'✅ Привязано. Присылай сделки строкой, например:\nEURUSD call 1м $10 85% win'); }
+      if(m.chat.id!==tgCfg.chatId) continue;
+      const key=m.chat.id+':'+m.message_id;
+      if(trades.some(t=>t.tgKey===key)) continue;
+      const text=(m.text||m.caption||'').trim();
+      if(text.startsWith('/')){ tgReply(m.chat.id,'Пришли сделку строкой: пара, call/put, экспирация, ставка, результат.\nНапример: EURUSD call 1м $10 85% win'); continue; }
+      let img=null;
+      if(m.photo){ try{ img=await tgPhotoToDataUrl(m.photo); }catch(e){} }
+      if(text){
+        const r=parseTradeText(text,(m.date||0)*1000);
+        if(r.ok){
+          const t={id:Date.now()+'_'+Math.random().toString(36).slice(2),...r.trade,notes:'✈️ из Telegram',source:'tg',tgKey:key};
+          if(img){ t.imgBefore=img; photos++; }
+          trades.push(t); added++;
+          tgReply(m.chat.id,'✅ Записано: '+t.pair+' '+t.direction.toUpperCase()+' '+t.expiry+' $'+t.stake+' → '+t.result.toUpperCase()+' ('+fmt(pnl(t))+'$)');
+        } else if(!img){ tgReply(m.chat.id,'❌ Не понял сделку, не хватает: '+r.missing.join(', ')+'.\nПример: EURUSD call 1м $10 85% win'); }
+      }
+      if(img && !(text && trades.length && trades[trades.length-1].tgKey===key)){
+        const lastTg=[...trades].reverse().find(t=>t.source==='tg');
+        if(lastTg){ if(!lastTg.imgBefore) lastTg.imgBefore=img; else lastTg.imgAfter=img; photos++; tgReply(m.chat.id,'📷 Скрин прикреплён к последней сделке'); }
+      }
+    }
+    saveTg();
+    if(added||photos){ save(); render(); showToast('✈️ Из Telegram: сделок '+added+(photos?', скринов '+photos:'')); playChime(appSettings.soundType); }
+    tgStatus('Подключено ✓ · '+(tgCfg.chatId?'чат привязан':'жду первое сообщение боту')+' · проверено '+new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})+(added?' · новых: '+added:''),'ok');
+  }catch(e){
+    tgStatus('Нет связи с Telegram. В окне Artifact внешние запросы закрыты — открой версию на GitHub Pages.','err');
+  }finally{ tgBusy=false; }
+}
+function tgSchedule(){
+  clearInterval(tgTimer); tgTimer=null;
+  if(tgCfg.enabled&&tgCfg.token){ tgTimer=setInterval(()=>{ if(!document.hidden) tgPoll(false); },30000); tgPoll(false); }
+  else tgStatus(tgCfg.token?'Выключено':'Выключено — вставь токен бота','');
+}
+document.getElementById('tgToken').value=tgCfg.token||'';
+document.getElementById('toggleTg').checked=!!tgCfg.enabled;
+document.getElementById('tgSaveBtn').onclick=()=>{
+  const v=document.getElementById('tgToken').value.trim();
+  if(v!==tgCfg.token){ tgCfg.token=v; tgCfg.offset=0; tgCfg.chatId=null; }
+  saveTg(); showToast(v?'💾 Токен сохранён':'Токен удалён'); tgSchedule();
+};
+document.getElementById('toggleTg').onchange=e=>{
+  if(e.target.checked&&!tgCfg.token){ e.target.checked=false; tgStatus('Сначала вставь токен бота и нажми «Сохранить токен»','err'); return; }
+  tgCfg.enabled=e.target.checked; saveTg(); tgSchedule();
+};
+document.getElementById('tgPullBtn').onclick=()=>tgPoll(true);
+document.getElementById('tgUnlinkBtn').onclick=()=>{ tgCfg.chatId=null; saveTg(); tgStatus('Чат отвязан — следующее сообщение боту привяжет новый','ok'); };
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden&&tgCfg.enabled) tgPoll(false); });
+tgSchedule();
 
 document.getElementById('quickRepeatBtn').onclick=()=>{
   if(!trades.length){ showToast('⚠️ Пока нет ни одной сделки для повтора'); return; }
