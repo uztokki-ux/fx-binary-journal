@@ -842,12 +842,12 @@ body{transition:background-color .4s ease,color .4s ease;}
         <button type="button" class="tgBtn" id="srvPullBtn">⬇️ Подтянуть сейчас</button>
       </div>
       <div class="settingsLabel" style="margin-top:10px">💵 Ставка для сделок с бота</div>
-      <div class="settingsNote" style="margin:0 0 6px">Бот не знает, сколько ты поставил, поэтому ставка задаётся здесь. Новые сделки с бота получат её автоматически. Если оставить пустой, берётся ставка из последней сделки.</div>
+      <div class="settingsNote" style="margin:0 0 6px">Когда ты жмёшь ✅/❌ в боте, он спрашивает сумму кнопками, и она приходит в дневник точной. Здесь задаётся запасная ставка для сделок, где сумму не выбрали. Если оставить пустой, берётся ставка из последней сделки.</div>
       <div style="display:flex;gap:8px;align-items:center">
         <input type="number" id="srvStake" class="tgInput" min="0" step="0.5" inputmode="decimal" placeholder="Ставка, $" style="flex:1">
         <input type="number" id="srvPayout" class="tgInput" min="1" max="100" step="1" inputmode="numeric" placeholder="Выплата, %" style="flex:1">
       </div>
-      <div class="tgBtns"><button type="button" class="tgBtn" id="srvApplyBtn">💵 Применить ко всем сделкам с бота</button></div>
+      <div class="tgBtns"><button type="button" class="tgBtn" id="srvApplyBtn">💵 Применить ко всем без точной ставки</button></div>
       <div class="tgStatus" id="srvStatus">Выключено</div>
       <div id="botSigBox" style="margin-top:10px"></div>
     </div>
@@ -2894,9 +2894,10 @@ function importTgArchive(){
       if(r.status===403){ status('Неверный ключ','err'); return; }
       if(!r.ok){ status('Сервер ответил ошибкой '+r.status,'err'); return; }
       const j=await r.json();
-      let added=0, shots=0;
+      let added=0, shots=0, stakeUpd=0;
       for(const t of (j.trades||[])){
-        if(trades.some(x=>x.tgKey===t.key)) continue;
+        const ex=trades.find(x=>x.tgKey===t.key);
+        if(ex){ if(t.stake>0&&!ex.stakeExact){ ex.stake=t.stake; ex.stakeExact=true; stakeUpd++; } continue; }
         let img=null;
         if(t.img){ try{
           const ir=await fetch(base+'/img/'+encodeURIComponent(t.img.replace(/\.png$/,''))+'.jpg?key='+encodeURIComponent(cfg.key));
@@ -2905,14 +2906,15 @@ function importTgArchive(){
         const last=[...trades].reverse().find(x=>x.stake>0&&x.source!=='srv');
         const stakeV=cfg.stake>0?+cfg.stake:(last?last.stake:10), payV=cfg.payout>0?+cfg.payout:((last&&last.payout)||80);
         const note='🖥 Из бота: '+(t.signal_type||'')+' · уверенность '+(t.score_pct||'?')+'%'+((t.reasons&&t.reasons.length)?'\nПричины: '+t.reasons.join(', '):'')+'\nСтавка взята из настройки «Ставка для сделок с бота», поправь через ✏️ при необходимости.';
-        trades.push({id:Date.now()+'_'+Math.random().toString(36).slice(2),date:t.date,time:t.time,pair:t.pair||'EUR/USD',direction:t.direction,expiry:t.expiry||'1м',stake:stakeV,payout:payV,result:t.result,overlaps:[],quality:'',emotion:EMOTIONS[0].l,notes:note,imgBefore:img,imgAfter:null,source:'srv',tgKey:t.key});
+        trades.push({id:Date.now()+'_'+Math.random().toString(36).slice(2),date:t.date,time:t.time,pair:t.pair||'EUR/USD',direction:t.direction,expiry:t.expiry||'1м',stake:t.stake>0?t.stake:stakeV,stakeExact:t.stake>0,payout:payV,result:t.result,overlaps:[],quality:'',emotion:EMOTIONS[0].l,notes:note,imgBefore:img,imgAfter:null,source:'srv',tgKey:t.key});
         added++;
       }
       const have=new Set(sigs.map(x=>x.key));
       (j.auto||[]).forEach(a=>{ if(!have.has(a.key)) sigs.push(a); });
       sigs.sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
       saveSigs(); renderBox();
-      if(added){ save(); render(); showToast('🖥 С сервера: сделок '+added+(shots?', скринов '+shots:'')); }
+      if(added||stakeUpd){ save(); render(); }
+      if(added) showToast('🖥 С сервера: сделок '+added+(shots?', скринов '+shots:''));
       status('Подключено ✓ · проверено '+new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})+(added?' · новых сделок: '+added:''),'ok');
     }catch(e){
       status(e&&e.name==='AbortError'?'Сервер не отвечает (ждал 15 сек). Проверь, что витрина запущена.':'Нет связи с сервером. Если дневник открыт в окне Artifact, внешние запросы там закрыты: открой версию на GitHub Pages. Иначе проверь адрес и что витрина запущена.','err');
@@ -2935,7 +2937,7 @@ function importTgArchive(){
   $('srvApplyBtn').onclick=()=>{
     cfg.stake=$('srvStake').value; cfg.payout=$('srvPayout').value; saveCfg();
     if(!(cfg.stake>0)){ status('Сначала впиши ставку','err'); return; }
-    let n=0; trades.forEach(t=>{ if(t.source==='srv'){ t.stake=+cfg.stake; if(cfg.payout>0) t.payout=+cfg.payout; n++; } });
+    let n=0; trades.forEach(t=>{ if(t.source==='srv'&&!t.stakeExact){ t.stake=+cfg.stake; if(cfg.payout>0) t.payout=+cfg.payout; n++; } });
     if(n){ save(); render(); }
     showToast('💵 Ставка $'+cfg.stake+' применена к сделкам с бота: '+n);
   };
