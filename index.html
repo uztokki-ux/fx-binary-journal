@@ -2862,6 +2862,7 @@ function importTgArchive(){
 /* ===== Сервер бота: сделки с кнопок ✅/❌ + авто-итоги (отдельно от основной статистики) ===== */
 (function(){
   const SK='fxbo_srv_v1', BK='fxbo_botsig_v1';
+  const triedImg=new Set();
   let cfg={url:'',key:'',enabled:false,stake:'',payout:''}, sigs=[], busy=false, timer=null;
   try{ const v=JSON.parse(localStorage.getItem(SK)); if(v) cfg=Object.assign(cfg,v); }catch(e){}
   try{ sigs=JSON.parse(localStorage.getItem(BK))||[]; }catch(e){ sigs=[]; }
@@ -2894,10 +2895,21 @@ function importTgArchive(){
       if(r.status===403){ status('Неверный ключ','err'); return; }
       if(!r.ok){ status('Сервер ответил ошибкой '+r.status,'err'); return; }
       const j=await r.json();
-      let added=0, shots=0, stakeUpd=0;
+      let added=0, shots=0, stakeUpd=0, imgUpd=0;
       for(const t of (j.trades||[])){
         const ex=trades.find(x=>x.tgKey===t.key);
-        if(ex){ if(t.stake>0&&!ex.stakeExact){ ex.stake=t.stake; ex.stakeExact=true; stakeUpd++; } continue; }
+        if(ex){
+          if(t.stake>0&&!ex.stakeExact){ ex.stake=t.stake; ex.stakeExact=true; stakeUpd++; }
+          const ik=t.key+'|'+t.img;
+          if(t.img&&!ex.imgBefore&&!triedImg.has(ik)){
+            triedImg.add(ik);
+            try{
+              const ir=await fetch(base+'/img/'+encodeURIComponent(t.img.replace(/\.png$/,''))+'.jpg?key='+encodeURIComponent(cfg.key));
+              if(ir.ok){ ex.imgBefore=await resizeImage(await ir.blob(),480,0.72); imgUpd++; }
+            }catch(e){}
+          }
+          continue;
+        }
         let img=null;
         if(t.img){ try{
           const ir=await fetch(base+'/img/'+encodeURIComponent(t.img.replace(/\.png$/,''))+'.jpg?key='+encodeURIComponent(cfg.key));
@@ -2913,9 +2925,9 @@ function importTgArchive(){
       (j.auto||[]).forEach(a=>{ if(!have.has(a.key)) sigs.push(a); });
       sigs.sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
       saveSigs(); renderBox();
-      if(added||stakeUpd){ save(); render(); }
-      if(added) showToast('🖥 С сервера: сделок '+added+(shots?', скринов '+shots:''));
-      status('Подключено ✓ · проверено '+new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})+(added?' · новых сделок: '+added:''),'ok');
+      if(added||stakeUpd||imgUpd){ save(); render(); }
+      if(added||imgUpd) showToast('🖥 С сервера: сделок '+added+', скринов '+(shots+imgUpd));
+      status('Подключено ✓ · проверено '+new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})+(added?' · новых сделок: '+added:'')+(imgUpd?' · добавлено скринов: '+imgUpd:''),'ok');
     }catch(e){
       status(e&&e.name==='AbortError'?'Сервер не отвечает (ждал 15 сек). Проверь, что витрина запущена.':'Нет связи с сервером. Если дневник открыт в окне Artifact, внешние запросы там закрыты: открой версию на GitHub Pages. Иначе проверь адрес и что витрина запущена.','err');
     }finally{ clearTimeout(to); busy=false; }
