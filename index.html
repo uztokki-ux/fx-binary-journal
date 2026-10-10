@@ -841,6 +841,13 @@ body{transition:background-color .4s ease,color .4s ease;}
         <button type="button" class="tgBtn" id="srvSaveBtn">💾 Сохранить</button>
         <button type="button" class="tgBtn" id="srvPullBtn">⬇️ Подтянуть сейчас</button>
       </div>
+      <div class="settingsLabel" style="margin-top:10px">💵 Ставка для сделок с бота</div>
+      <div class="settingsNote" style="margin:0 0 6px">Бот не знает, сколько ты поставил, поэтому ставка задаётся здесь. Новые сделки с бота получат её автоматически. Если оставить пустой, берётся ставка из последней сделки.</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="number" id="srvStake" class="tgInput" min="0" step="0.5" inputmode="decimal" placeholder="Ставка, $" style="flex:1">
+        <input type="number" id="srvPayout" class="tgInput" min="1" max="100" step="1" inputmode="numeric" placeholder="Выплата, %" style="flex:1">
+      </div>
+      <div class="tgBtns"><button type="button" class="tgBtn" id="srvApplyBtn">💵 Применить ко всем сделкам с бота</button></div>
       <div class="tgStatus" id="srvStatus">Выключено</div>
       <div id="botSigBox" style="margin-top:10px"></div>
     </div>
@@ -2855,7 +2862,7 @@ function importTgArchive(){
 /* ===== Сервер бота: сделки с кнопок ✅/❌ + авто-итоги (отдельно от основной статистики) ===== */
 (function(){
   const SK='fxbo_srv_v1', BK='fxbo_botsig_v1';
-  let cfg={url:'',key:'',enabled:false}, sigs=[], busy=false, timer=null;
+  let cfg={url:'',key:'',enabled:false,stake:'',payout:''}, sigs=[], busy=false, timer=null;
   try{ const v=JSON.parse(localStorage.getItem(SK)); if(v) cfg=Object.assign(cfg,v); }catch(e){}
   try{ sigs=JSON.parse(localStorage.getItem(BK))||[]; }catch(e){ sigs=[]; }
   const $=id=>document.getElementById(id);
@@ -2895,9 +2902,10 @@ function importTgArchive(){
           const ir=await fetch(base+'/img/'+encodeURIComponent(t.img.replace(/\.png$/,''))+'.jpg?key='+encodeURIComponent(cfg.key));
           if(ir.ok){ img=await resizeImage(await ir.blob(),480,0.72); shots++; }
         }catch(e){} }
-        const last=[...trades].reverse().find(x=>x.stake>0);
-        const note='🖥 Из бота: '+(t.signal_type||'')+' · уверенность '+(t.score_pct||'?')+'%'+((t.reasons&&t.reasons.length)?'\nПричины: '+t.reasons.join(', '):'')+'\nСтавка взята по последней сделке, поправь через ✏️ при необходимости.';
-        trades.push({id:Date.now()+'_'+Math.random().toString(36).slice(2),date:t.date,time:t.time,pair:t.pair||'EUR/USD',direction:t.direction,expiry:t.expiry||'1м',stake:last?last.stake:10,payout:(last&&last.payout)||80,result:t.result,overlaps:[],quality:'',emotion:EMOTIONS[0].l,notes:note,imgBefore:img,imgAfter:null,source:'srv',tgKey:t.key});
+        const last=[...trades].reverse().find(x=>x.stake>0&&x.source!=='srv');
+        const stakeV=cfg.stake>0?+cfg.stake:(last?last.stake:10), payV=cfg.payout>0?+cfg.payout:((last&&last.payout)||80);
+        const note='🖥 Из бота: '+(t.signal_type||'')+' · уверенность '+(t.score_pct||'?')+'%'+((t.reasons&&t.reasons.length)?'\nПричины: '+t.reasons.join(', '):'')+'\nСтавка взята из настройки «Ставка для сделок с бота», поправь через ✏️ при необходимости.';
+        trades.push({id:Date.now()+'_'+Math.random().toString(36).slice(2),date:t.date,time:t.time,pair:t.pair||'EUR/USD',direction:t.direction,expiry:t.expiry||'1м',stake:stakeV,payout:payV,result:t.result,overlaps:[],quality:'',emotion:EMOTIONS[0].l,notes:note,imgBefore:img,imgAfter:null,source:'srv',tgKey:t.key});
         added++;
       }
       const have=new Set(sigs.map(x=>x.key));
@@ -2920,6 +2928,16 @@ function importTgArchive(){
   $('toggleSrv').onchange=e=>{
     if(e.target.checked&&(!cfg.url||!cfg.key)){ e.target.checked=false; status('Сначала сохрани адрес и ключ','err'); return; }
     cfg.enabled=e.target.checked; saveCfg(); schedule();
+  };
+  $('srvStake').value=cfg.stake||''; $('srvPayout').value=cfg.payout||'';
+  $('srvStake').onchange=()=>{ cfg.stake=$('srvStake').value; saveCfg(); };
+  $('srvPayout').onchange=()=>{ cfg.payout=$('srvPayout').value; saveCfg(); };
+  $('srvApplyBtn').onclick=()=>{
+    cfg.stake=$('srvStake').value; cfg.payout=$('srvPayout').value; saveCfg();
+    if(!(cfg.stake>0)){ status('Сначала впиши ставку','err'); return; }
+    let n=0; trades.forEach(t=>{ if(t.source==='srv'){ t.stake=+cfg.stake; if(cfg.payout>0) t.payout=+cfg.payout; n++; } });
+    if(n){ save(); render(); }
+    showToast('💵 Ставка $'+cfg.stake+' применена к сделкам с бота: '+n);
   };
   $('srvPullBtn').onclick=()=>pull(true);
   renderBox(); schedule();
