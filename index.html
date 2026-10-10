@@ -829,6 +829,23 @@ body{transition:background-color .4s ease,color .4s ease;}
     </div>
 
     <div class="settingsSection">
+      <div class="settingsLabel">🖥 Сервер бота (автоподгрузка сделок и скринов)</div>
+      <div class="settingsNote" style="margin:0 0 8px">Дневник сам забирает с твоего сервера те сигналы, которые ты разметил кнопками ✅/❌ в боте, вместе со скрином графика. Ещё он показывает отдельную статистику сигналов, которые бот проверил сам. Эти авто-сигналы в основную статистику дневника <b>не попадают</b>: это не твои сделки.</div>
+      <div class="settingsToggleRow">
+        <span>Подтягивать с сервера</span>
+        <label class="switch"><input type="checkbox" id="toggleSrv"><span class="slider"></span></label>
+      </div>
+      <input type="text" id="srvUrl" class="tgInput" autocomplete="off" spellcheck="false" placeholder="Адрес, например https://109-120-146-139.sslip.io">
+      <input type="password" id="srvKey" class="tgInput" autocomplete="off" spellcheck="false" placeholder="Ключ доступа" style="margin-top:6px">
+      <div class="tgBtns">
+        <button type="button" class="tgBtn" id="srvSaveBtn">💾 Сохранить</button>
+        <button type="button" class="tgBtn" id="srvPullBtn">⬇️ Подтянуть сейчас</button>
+      </div>
+      <div class="tgStatus" id="srvStatus">Выключено</div>
+      <div id="botSigBox" style="margin-top:10px"></div>
+    </div>
+
+    <div class="settingsSection">
       <div class="settingsLabel">📥 Архив из темы «Anatomy candle (REAL)»</div>
       <div class="settingsNote" style="margin:0 0 8px">197 сделок из твоей темы в Telegram: дата, время поста, направление, экспирация, перекрытия и результат. Ставки ориентировочные (если в посте не указана сумма — типовые $10, а в августе 2025 около 1% от баланса из твоих постов), скринов нет, а пара почти везде не указана — стоит EUR/USD. Всё можно поправить через ✏️ в истории.</div>
       <div class="tgBtns"><button type="button" class="tgBtn" id="archiveImportBtn">📥 Загрузить архив в дневник</button></div>
@@ -2833,6 +2850,77 @@ function importTgArchive(){
   function refresh(){ if(done()){ st.textContent='Архив загружен ✓'; st.className='tgStatus ok'; btn.disabled=true; btn.style.opacity=.5; } }
   btn.onclick=()=>{ const r=importTgArchive(); const n=r.added+r.updated; showToast(n?('✈️ Архив: добавлено '+r.added+(r.updated?', обновлено ставок '+r.updated:'')):'Архив уже загружен'); st.textContent=n?('Добавлено: '+r.added+(r.updated?', обновлено ставок: '+r.updated:'')+'. Ставки ориентировочные — поправь через ✏️ в истории.'):'Архив уже загружен'; st.className='tgStatus ok'; if(n){ try{playChime(appSettings.soundType);}catch(e){} } refresh(); };
   refresh();
+})();
+
+/* ===== Сервер бота: сделки с кнопок ✅/❌ + авто-итоги (отдельно от основной статистики) ===== */
+(function(){
+  const SK='fxbo_srv_v1', BK='fxbo_botsig_v1';
+  let cfg={url:'',key:'',enabled:false}, sigs=[], busy=false, timer=null;
+  try{ const v=JSON.parse(localStorage.getItem(SK)); if(v) cfg=Object.assign(cfg,v); }catch(e){}
+  try{ sigs=JSON.parse(localStorage.getItem(BK))||[]; }catch(e){ sigs=[]; }
+  const $=id=>document.getElementById(id);
+  const esc=x=>String(x==null?'':x).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const saveCfg=()=>{ try{ localStorage.setItem(SK,JSON.stringify(cfg)); }catch(e){} };
+  const saveSigs=()=>{ try{ localStorage.setItem(BK,JSON.stringify(sigs.slice(-500))); }catch(e){} };
+  function status(msg,cls){ const el=$('srvStatus'); el.textContent=msg; el.className='tgStatus'+(cls?' '+cls:''); }
+  function renderBox(){
+    const box=$('botSigBox'); if(!box) return;
+    if(!sigs.length){ box.innerHTML=''; return; }
+    const w=sigs.filter(x=>x.result==='win').length, l=sigs.filter(x=>x.result==='loss').length, d=sigs.filter(x=>x.result==='draw').length;
+    const dec=w+l, rate=dec?Math.round(w/dec*1000)/10:0;
+    const be=55.6;
+    const verdict=dec<30?'Выборка мала (меньше 30), это пока шум, а не вывод.':(rate>=be?'Выше безубытка '+be+'% (при выплате 80%), но проверь доверительный интервал.':'Ниже безубытка '+be+'% при выплате 80%.');
+    const rows=sigs.slice(-10).reverse().map(x=>'<div style="display:flex;justify-content:space-between;gap:8px;padding:3px 0;border-top:1px solid #232733;font-size:12px"><span>'+esc(x.date)+' '+esc(x.time)+' · '+esc(x.pair)+' '+(x.direction==='call'?'▲':'▼')+' '+esc(x.expiry)+'</span><span style="color:'+(x.result==='win'?'#26a69a':x.result==='loss'?'#ef5350':'#727d92')+'">'+(x.result==='win'?'плюс':x.result==='loss'?'минус':'ничья')+'</span></div>').join('');
+    box.innerHTML='<div style="font-weight:600;margin-bottom:4px">🤖 Сигналы бота (проверены автоматически)</div>'
+      +'<div style="font-size:13px">Всего '+sigs.length+' · плюс '+w+' · минус '+l+' · ничья '+d+' · доля плюсов <b>'+rate+'%</b></div>'
+      +'<div style="font-size:12px;color:#727d92;margin:2px 0 6px">'+verdict+'</div>'+rows;
+  }
+  async function pull(manual){
+    if(busy) return;
+    if(!cfg.url||!cfg.key){ if(manual) status('Сначала укажи адрес и ключ','err'); return; }
+    busy=true;
+    const base=cfg.url.trim().replace(/\/+$/,'');
+    try{
+      const r=await fetch(base+'/feed?key='+encodeURIComponent(cfg.key));
+      if(r.status===403){ status('Неверный ключ','err'); return; }
+      if(!r.ok){ status('Сервер ответил ошибкой '+r.status,'err'); return; }
+      const j=await r.json();
+      let added=0, shots=0;
+      for(const t of (j.trades||[])){
+        if(trades.some(x=>x.tgKey===t.key)) continue;
+        let img=null;
+        if(t.img){ try{
+          const ir=await fetch(base+'/img/'+encodeURIComponent(t.img.replace(/\.png$/,''))+'.jpg?key='+encodeURIComponent(cfg.key));
+          if(ir.ok){ img=await resizeImage(await ir.blob(),480,0.72); shots++; }
+        }catch(e){} }
+        const last=[...trades].reverse().find(x=>x.stake>0);
+        const note='🖥 Из бота: '+(t.signal_type||'')+' · уверенность '+(t.score_pct||'?')+'%'+((t.reasons&&t.reasons.length)?'\nПричины: '+t.reasons.join(', '):'')+'\nСтавка взята по последней сделке, поправь через ✏️ при необходимости.';
+        trades.push({id:Date.now()+'_'+Math.random().toString(36).slice(2),date:t.date,time:t.time,pair:t.pair||'EUR/USD',direction:t.direction,expiry:t.expiry||'1м',stake:last?last.stake:10,payout:(last&&last.payout)||80,result:t.result,overlaps:[],quality:'',emotion:EMOTIONS[0].l,notes:note,imgBefore:img,imgAfter:null,source:'srv',tgKey:t.key});
+        added++;
+      }
+      const have=new Set(sigs.map(x=>x.key));
+      (j.auto||[]).forEach(a=>{ if(!have.has(a.key)) sigs.push(a); });
+      sigs.sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
+      saveSigs(); renderBox();
+      if(added){ save(); render(); showToast('🖥 С сервера: сделок '+added+(shots?', скринов '+shots:'')); }
+      status('Подключено ✓ · проверено '+new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})+(added?' · новых сделок: '+added:''),'ok');
+    }catch(e){
+      status('Нет связи с сервером. В окне Artifact внешние запросы закрыты, открой версию на GitHub Pages.','err');
+    }finally{ busy=false; }
+  }
+  function schedule(){
+    clearInterval(timer); timer=null;
+    if(cfg.enabled&&cfg.url&&cfg.key){ timer=setInterval(()=>{ if(!document.hidden) pull(false); },60000); pull(false); }
+    else status(cfg.url?'Выключено':'Выключено: укажи адрес и ключ','');
+  }
+  $('srvUrl').value=cfg.url||''; $('srvKey').value=cfg.key||''; $('toggleSrv').checked=!!cfg.enabled;
+  $('srvSaveBtn').onclick=()=>{ cfg.url=$('srvUrl').value.trim(); cfg.key=$('srvKey').value.trim(); saveCfg(); showToast('💾 Сохранено'); schedule(); };
+  $('toggleSrv').onchange=e=>{
+    if(e.target.checked&&(!cfg.url||!cfg.key)){ e.target.checked=false; status('Сначала сохрани адрес и ключ','err'); return; }
+    cfg.enabled=e.target.checked; saveCfg(); schedule();
+  };
+  $('srvPullBtn').onclick=()=>pull(true);
+  renderBox(); schedule();
 })();
 </script>
 </body>
