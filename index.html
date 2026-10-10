@@ -833,7 +833,7 @@ body{transition:background-color .4s ease,color .4s ease;}
       <div class="settingsNote" style="margin:0 0 8px">Дневник сам забирает с твоего сервера те сигналы, которые ты разметил кнопками ✅/❌ в боте, вместе со скрином графика. Ещё он показывает отдельную статистику сигналов, которые бот проверил сам. Эти авто-сигналы в основную статистику дневника <b>не попадают</b>: это не твои сделки.</div>
       <div class="settingsToggleRow">
         <span>Подтягивать с сервера</span>
-        <label class="switch"><input type="checkbox" id="toggleSrv"><span class="slider"></span></label>
+        <label class="switch"><input type="checkbox" id="toggleSrv" autocomplete="off"><span class="slider"></span></label>
       </div>
       <input type="text" id="srvUrl" class="tgInput" autocomplete="off" spellcheck="false" placeholder="Адрес, например https://109-120-146-139.sslip.io">
       <input type="password" id="srvKey" class="tgInput" autocomplete="off" spellcheck="false" placeholder="Ключ доступа" style="margin-top:6px">
@@ -2876,12 +2876,14 @@ function importTgArchive(){
       +'<div style="font-size:12px;color:#727d92;margin:2px 0 6px">'+verdict+'</div>'+rows;
   }
   async function pull(manual){
-    if(busy) return;
+    if(busy){ if(manual) status('Проверка уже идёт, подожди несколько секунд…',''); return; }
+    if(manual){ cfg.url=$('srvUrl').value.trim(); cfg.key=$('srvKey').value.trim(); saveCfg(); }
     if(!cfg.url||!cfg.key){ if(manual) status('Сначала укажи адрес и ключ','err'); return; }
-    busy=true;
+    busy=true; if(manual) status('Проверяю…','');
     const base=cfg.url.trim().replace(/\/+$/,'');
+    const ac=new AbortController(); const to=setTimeout(()=>ac.abort(),15000);
     try{
-      const r=await fetch(base+'/feed?key='+encodeURIComponent(cfg.key));
+      const r=await fetch(base+'/feed?key='+encodeURIComponent(cfg.key),{signal:ac.signal});
       if(r.status===403){ status('Неверный ключ','err'); return; }
       if(!r.ok){ status('Сервер ответил ошибкой '+r.status,'err'); return; }
       const j=await r.json();
@@ -2905,8 +2907,8 @@ function importTgArchive(){
       if(added){ save(); render(); showToast('🖥 С сервера: сделок '+added+(shots?', скринов '+shots:'')); }
       status('Подключено ✓ · проверено '+new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})+(added?' · новых сделок: '+added:''),'ok');
     }catch(e){
-      status('Нет связи с сервером. В окне Artifact внешние запросы закрыты, открой версию на GitHub Pages.','err');
-    }finally{ busy=false; }
+      status(e&&e.name==='AbortError'?'Сервер не отвечает (ждал 15 сек). Проверь, что витрина запущена.':'Нет связи с сервером. Если дневник открыт в окне Artifact, внешние запросы там закрыты: открой версию на GitHub Pages. Иначе проверь адрес и что витрина запущена.','err');
+    }finally{ clearTimeout(to); busy=false; }
   }
   function schedule(){
     clearInterval(timer); timer=null;
