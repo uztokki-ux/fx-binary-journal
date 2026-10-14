@@ -319,6 +319,16 @@ body{transition:background-color .4s ease,color .4s ease;}
 .newsFactThumb{max-width:220px;max-height:140px;border-radius:10px;border:1px solid var(--border);display:block;cursor:zoom-in;transition:.2s;}
 .newsFactThumb:hover{border-color:var(--mint);transform:scale(1.02);}
 .newsCurrBadge{font-size:9.5px;font-weight:800;padding:2px 8px;border-radius:8px;background:rgba(245,185,66,.15);color:#f5b942;letter-spacing:.3px;}
+.selBar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:4px 0 10px;font-size:12px;color:var(--muted);}
+.selBar button{background:rgba(255,255,255,.05);border:1px solid var(--border);color:inherit;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:12px;}
+.selBar button:hover:not(:disabled){border-color:var(--mint);}
+.selBar input[type=number]{width:56px;background:rgba(255,255,255,.04);border:1px solid var(--border);color:inherit;border-radius:6px;padding:4px 6px;font-size:12px;}
+.selBar .selDel{margin-left:auto;color:var(--coral);}
+.selBar .selDel:disabled{opacity:.4;cursor:default;}
+.chkCol{width:28px;text-align:center;}
+.rowChk,#selAllChk{cursor:pointer;width:15px;height:15px;accent-color:#00e2a0;}
+tr.rowSel td{background:rgba(0,226,160,.07);}
+
 .del{background:none;color:var(--coral);border:none;cursor:pointer;font-size:14px;transition:.15s;}
 .del:hover{transform:scale(1.2);}
 .viewBtn{background:none;color:var(--accent);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px;padding:3px 8px;transition:.15s;}
@@ -716,8 +726,14 @@ body{transition:background-color .4s ease,color .4s ease;}
 
   <div class="card tablewrap">
     <h2>История сделок</h2>
+    <div class="selBar" id="selBar">
+      <label class="selAll"><input type="checkbox" id="selAllChk"> все</label>
+      <span class="selLast">последние <input type="number" id="selN" min="1" value="10"> <button type="button" id="selLastBtn">выбрать</button></span>
+      <button type="button" id="selClearBtn">снять выбор</button>
+      <button type="button" id="selDelBtn" class="selDel" disabled>🗑 Удалить выбранные (0)</button>
+    </div>
     <table>
-      <thead><tr><th>Дата</th><th>Время</th><th>Сессия</th><th>Пара</th><th>Напр.</th><th>Эксп.</th><th>Ставка</th><th>Перекр.</th><th>Рез.</th><th>Качество</th><th>P&L</th><th>Эмоция</th><th>Скрины</th><th>Анализ</th><th></th></tr></thead>
+      <thead><tr><th class="chkCol"></th><th>Дата</th><th>Время</th><th>Сессия</th><th>Пара</th><th>Напр.</th><th>Эксп.</th><th>Ставка</th><th>Перекр.</th><th>Рез.</th><th>Качество</th><th>P&L</th><th>Эмоция</th><th>Скрины</th><th>Анализ</th><th></th></tr></thead>
       <tbody id="tbody"></tbody>
     </table>
     <div class="empty" id="emptyMsg" style="display:none">Пока нет сделок — запиши первую выше.</div>
@@ -1069,6 +1085,14 @@ let imgBeforeData=null, imgAfterData=null, hoveredShot=null;
 let hoveredNewsFactShot=null, newsFactImgDraft={};
 
 function save(){ try{ localStorage.setItem(KEY,JSON.stringify(trades)); }catch(e){ showToast('⚠️ Не удалось сохранить — в браузере закончилось место (обычно из-за скринов)'); } }
+/* ключи удалённых сделок (с сервера / Telegram / архива): чтобы они не возвращались при следующей синхронизации */
+const DELKEYS='fxbo_deleted_keys_v1';
+function getDeletedKeys(){ try{ return new Set(JSON.parse(localStorage.getItem(DELKEYS))||[]); }catch(e){ return new Set(); } }
+function rememberDeleted(list){
+  const ks=(list||[]).map(t=>t&&t.tgKey).filter(Boolean); if(!ks.length) return;
+  const set=getDeletedKeys(); ks.forEach(k=>set.add(k));
+  try{ localStorage.setItem(DELKEYS,JSON.stringify([...set])); }catch(e){}
+}
 function ovPnl(o,payout){ return o.result==='win'? o.stake*payout/100 : (o.result==='loss'? -o.stake:0); }
 function pnl(t){
   let p = t.result==='win'? t.stake*t.payout/100 : (t.result==='loss'? -t.stake:0);
@@ -1530,6 +1554,49 @@ document.getElementById('lightbox').onclick=(e)=>{ if(e.target.id==='lightbox') 
 
 function weekdayIdx(dateStr){ const d=new Date(dateStr+'T00:00:00'); return (d.getDay()+6)%7; }
 
+
+/* ===== выбор нескольких сделок в истории и массовое удаление ===== */
+const selIds=new Set();
+let selAnchor=null;
+function updateSelUI(sorted){
+  const n=selIds.size;
+  const btn=document.getElementById('selDelBtn'); if(btn){ btn.disabled=!n; btn.textContent='🗑 Удалить выбранные ('+n+')'; }
+  const all=document.getElementById('selAllChk'); if(all){ all.checked=!!sorted.length&&n===sorted.length; all.indeterminate=n>0&&n<sorted.length; }
+  document.querySelectorAll('.rowChk').forEach(c=>{ c.checked=selIds.has(c.dataset.sel); c.closest('tr').classList.toggle('rowSel',c.checked); });
+}
+function bindSelection(sorted){
+  const ids=sorted.map(t=>t.id);
+  [...selIds].forEach(id=>{ if(!ids.includes(id)) selIds.delete(id); });
+  document.querySelectorAll('.rowChk').forEach(c=>{
+    c.onclick=(e)=>{
+      const id=c.dataset.sel;
+      if(e.shiftKey&&selAnchor&&ids.includes(selAnchor)){
+        const a=ids.indexOf(selAnchor), b=ids.indexOf(id);
+        ids.slice(Math.min(a,b),Math.max(a,b)+1).forEach(x=>{ if(c.checked) selIds.add(x); else selIds.delete(x); });
+      } else { if(c.checked) selIds.add(id); else selIds.delete(id); }
+      selAnchor=id; updateSelUI(sorted);
+    };
+  });
+  const all=document.getElementById('selAllChk');
+  all.onclick=()=>{ if(all.checked) ids.forEach(x=>selIds.add(x)); else selIds.clear(); updateSelUI(sorted); };
+  document.getElementById('selClearBtn').onclick=()=>{ selIds.clear(); updateSelUI(sorted); };
+  document.getElementById('selLastBtn').onclick=()=>{
+    const n=Math.max(0,Math.floor(+document.getElementById('selN').value||0));
+    if(!n){ showToast('Впиши, сколько последних сделок выбрать'); return; }
+    selIds.clear(); ids.slice(-n).forEach(x=>selIds.add(x)); updateSelUI(sorted);
+  };
+  document.getElementById('selDelBtn').onclick=()=>{
+    const n=selIds.size; if(!n) return;
+    showConfirm('Удалить выбранные сделки ('+n+')? Действие необратимо.',()=>{
+      if(editingId&&selIds.has(editingId)) cancelEdit();
+      rememberDeleted(trades.filter(t=>selIds.has(t.id)));
+      trades=trades.filter(t=>!selIds.has(t.id));
+      selIds.clear(); save(); render(); showToast('🗑 Удалено сделок: '+n);
+    });
+  };
+  updateSelUI(sorted);
+}
+
 function render(){
   const tbody=document.getElementById('tbody'); tbody.innerHTML='';
   const sorted=[...trades].sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
@@ -1543,7 +1610,7 @@ function render(){
     const verdict=analyzeTrade(t).verdict;
     const tgBadge=t.source==='tg'?'<span title="Добавлено из Telegram" style="margin-left:4px">✈️</span>':'';
     const timerBadge=t.waitTimerCompleted?'<span title="Выжидание позиции перед входом выдержано по таймеру" style="opacity:.75;margin-left:4px">⏱️✅</span>':(t.waitTimerUsed?'<span title="Выжидание позиции было запущено, но прервано раньше срока" style="opacity:.6;margin-left:4px">⏱️⏹</span>':'');
-    tr.innerHTML=`<td>${t.date}</td><td>${t.time||''}${timerBadge}${tgBadge}</td><td><span class="badge sess">${sess.emoji} ${sess.short}</span></td><td>${t.pair}</td><td>${t.direction==='call'?'▲ CALL':'▼ PUT'}</td>
+    tr.innerHTML=`<td class="chkCol"><input type="checkbox" class="rowChk" data-sel="${t.id}"${selIds.has(t.id)?' checked':''}></td><td>${t.date}</td><td>${t.time||''}${timerBadge}${tgBadge}</td><td><span class="badge sess">${sess.emoji} ${sess.short}</span></td><td>${t.pair}</td><td>${t.direction==='call'?'▲ CALL':'▼ PUT'}</td>
       <td>${t.expiry}</td><td>$${t.stake}</td>
       <td>${ovCount?`<span class="badge ov">${ovCount}×</span>`:'—'}</td>
       <td><span class="badge ${t.result}">${t.result.toUpperCase()}</span></td>
@@ -1556,10 +1623,11 @@ function render(){
     tbody.appendChild(tr);
   });
   document.querySelectorAll('.del').forEach(b=>b.onclick=()=>{
-    const doDelete=()=>{ if(editingId===b.dataset.id) cancelEdit(); trades=trades.filter(t=>t.id!==b.dataset.id);save();render(); };
+    const doDelete=()=>{ if(editingId===b.dataset.id) cancelEdit(); rememberDeleted(trades.filter(t=>t.id===b.dataset.id)); selIds.delete(b.dataset.id); trades=trades.filter(t=>t.id!==b.dataset.id);save();render(); };
     if(appSettings.confirmDelete) showConfirm('Удалить эту сделку? Действие необратимо.', doDelete);
     else doDelete();
   });
+  bindSelection(sorted);
   document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{ const t=trades.find(x=>x.id===b.dataset.edit); if(t) startEdit(t); });
   document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{ const t=trades.find(x=>x.id===b.dataset.view); if(t) openLightbox(t); });
   document.querySelectorAll('[data-analysis]').forEach(b=>b.onclick=()=>{ const t=trades.find(x=>x.id===b.dataset.analysis); if(t) openLightbox(t); });
@@ -1578,12 +1646,16 @@ function renderStats(sorted){
   let bestPair='—', bestVal=-Infinity;
   Object.entries(byPair).forEach(([k,v])=>{ if(v>bestVal){bestVal=v;bestPair=k;} });
   const box=document.getElementById('stats');
-  box.innerHTML=['Сделок','Профит','Винрейт','Серия','Лучшая пара'].map((l,i)=>`<div class="stat"><b id="st${i}"></b><span>${l}</span></div>`).join('');
+  box.innerHTML=['Сделок','Профит','Профит за день','Винрейт','Серия','Лучшая пара'].map((l,i)=>`<div class="stat"><b id="st${i}"></b><span>${l}</span></div>`).join('');
   animateNum(document.getElementById('st0'),total,'',0);
   const st1=document.getElementById('st1'); st1.className=sum>=0?'mint':'coral'; st1.textContent=(sum>=0?'+$':'-$')+Math.abs(sum).toFixed(2);
-  document.getElementById('st2').textContent=winRate.toFixed(1)+'%';
-  document.getElementById('st3').textContent=(lastRes==='win'?'🔥 ':lastRes==='loss'?'❄️ ':'— ')+streak;
-  document.getElementById('st4').textContent=bestPair;
+  const now=new Date(), todayKey=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+  const todays=sorted.filter(t=>t.date===todayKey), dayP=todays.reduce((a,t)=>a+pnl(t),0);
+  const st2=document.getElementById('st2'); st2.className=todays.length?(dayP>=0?'mint':'coral'):''; st2.textContent=todays.length?((dayP>=0?'+$':'-$')+Math.abs(dayP).toFixed(2)):'$0.00';
+  st2.title=todays.length?('Сегодня сделок: '+todays.length):'Сегодня сделок нет';
+  document.getElementById('st3').textContent=winRate.toFixed(1)+'%';
+  document.getElementById('st4').textContent=(lastRes==='win'?'🔥 ':lastRes==='loss'?'❄️ ':'— ')+streak;
+  document.getElementById('st5').textContent=bestPair;
 }
 
 function renderWeekday(sorted){
@@ -2769,7 +2841,7 @@ async function tgPoll(manual){
       if(!tgCfg.chatId){ tgCfg.chatId=m.chat.id; showToast('✈️ Бот привязан к твоему чату'); tgReply(m.chat.id,'✅ Привязано. Присылай сделки строкой, например:\nEURUSD call 1м $10 85% win'); }
       if(m.chat.id!==tgCfg.chatId) continue;
       const key=m.chat.id+':'+m.message_id;
-      if(trades.some(t=>t.tgKey===key)) continue;
+      if(trades.some(t=>t.tgKey===key)||getDeletedKeys().has(key)) continue;
       const text=(m.text||m.caption||'').trim();
       if(text.startsWith('/')){ tgReply(m.chat.id,'Пришли сделку строкой: пара, call/put, экспирация, ставка, результат.\nНапример: EURUSD call 1м $10 85% win'); continue; }
       let img=null;
@@ -2842,6 +2914,7 @@ function importTgArchive(){
   let added=0, updated=0;
   TG_ARCHIVE.forEach(a=>{
     const key='arch_'+a.k;
+    if(getDeletedKeys().has(key)) return;
     const ex=trades.find(t=>t.tgKey===key);
     if(ex){ if(!ex.stake && a.s){ ex.stake=a.s; ex.payout=ex.payout||80; ex.notes=(ex.notes||'').replace(/\n\n/,archStakeNote(a)+'\n\n'); updated++; } return; }
     const note='✈️ Архив темы «Anatomy candle (REAL)», пост №'+a.k+(a.p?'':' · пара не указана в тексте — поставлена EUR/USD, проверь по скрину')+(a.eg?'':' · экспирация не указана — поставлена 1м')+(a.ov?' · перекрытий: '+a.ov:'')+archStakeNote(a)+'\n\n'+a.n;
@@ -2853,7 +2926,7 @@ function importTgArchive(){
 }
 (function(){
   const btn=document.getElementById('archiveImportBtn'); const st=document.getElementById('archiveStatus'); if(!btn) return;
-  const done=()=>TG_ARCHIVE.every(a=>trades.some(t=>t.tgKey==='arch_'+a.k&&t.stake>0));
+  const done=()=>{ const dk=getDeletedKeys(); return TG_ARCHIVE.every(a=>dk.has('arch_'+a.k)||trades.some(t=>t.tgKey==='arch_'+a.k&&t.stake>0)); };
   function refresh(){ if(done()){ st.textContent='Архив загружен ✓'; st.className='tgStatus ok'; btn.disabled=true; btn.style.opacity=.5; } }
   btn.onclick=()=>{ const r=importTgArchive(); const n=r.added+r.updated; showToast(n?('✈️ Архив: добавлено '+r.added+(r.updated?', обновлено ставок '+r.updated:'')):'Архив уже загружен'); st.textContent=n?('Добавлено: '+r.added+(r.updated?', обновлено ставок: '+r.updated:'')+'. Ставки ориентировочные — поправь через ✏️ в истории.'):'Архив уже загружен'; st.className='tgStatus ok'; if(n){ try{playChime(appSettings.soundType);}catch(e){} } refresh(); };
   refresh();
@@ -2896,7 +2969,9 @@ function importTgArchive(){
       if(!r.ok){ status('Сервер ответил ошибкой '+r.status,'err'); return; }
       const j=await r.json();
       let added=0, shots=0, stakeUpd=0, imgUpd=0;
+      const delKeys=getDeletedKeys();
       for(const t of (j.trades||[])){
+        if(delKeys.has(t.key)) continue;
         const ex=trades.find(x=>x.tgKey===t.key);
         if(ex){
           if(t.stake>0&&!ex.stakeExact){ ex.stake=t.stake; ex.stakeExact=true; stakeUpd++; }
