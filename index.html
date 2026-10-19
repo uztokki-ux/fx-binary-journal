@@ -343,6 +343,16 @@ tr.rowSel td{background:rgba(0,226,160,.07);}
 .aiBtn:hover{filter:brightness(1.1);transform:translateY(-1px);}
 .errBtn{background:linear-gradient(90deg,var(--coral),#c73a4e);animation:errGlow 2.5s ease-in-out infinite;}
 @keyframes errGlow{0%,100%{box-shadow:0 0 0 rgba(255,90,110,0)}50%{box-shadow:0 0 22px rgba(255,90,110,.45)}}
+.aiRow{display:flex;gap:8px;flex-wrap:wrap;align-items:stretch}
+.aiSel{background:var(--card2,#1b1f2b);color:inherit;border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:11px 12px;font-size:14px;min-width:0}
+.aiHint{font-size:12px;opacity:.65;margin-top:8px}
+.aiTradeBtn{background:none;border:1px solid rgba(255,255,255,.14);border-radius:8px;cursor:pointer;padding:3px 7px;margin-right:4px;font-size:14px}
+.aiTradeBtn:hover{filter:brightness(1.3)}
+.aiModal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:9999;padding:16px}
+.aiModal.show{display:flex}
+.aiModalCard{background:var(--card,#161a24);color:inherit;border-radius:16px;padding:18px;max-width:560px;width:100%;max-height:80vh;overflow:auto;border:1px solid rgba(255,255,255,.12)}
+.aiModalHead{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.aiModalHead button{background:none;border:none;color:inherit;font-size:18px;cursor:pointer}
 .aiOut{white-space:pre-wrap;font-size:13.5px;line-height:1.65;margin-top:14px;color:#dde3f0;}
 .chartWrap{position:relative;height:220px;width:100%;}
 .chartWrap canvas{position:absolute;inset:0;width:100%!important;height:100%!important;}
@@ -742,6 +752,28 @@ tr.rowSel td{background:rgba(0,226,160,.07);}
 </div>
 
 <div class="tabPanel" data-tab="ai">
+
+  <div class="card">
+    <h2>🧠 Разбор периода</h2>
+    <div class="aiRow">
+      <select id="periodSel" class="aiSel">
+        <option value="all">Всё время</option><option value="30">Последние 30 дней</option><option value="7">Последние 7 дней</option>
+        <option value="today">Сегодня</option><option value="50">Последние 50 сделок</option>
+      </select>
+      <button class="aiBtn" id="periodBtn" style="flex:1">Разобрать период</button>
+    </div>
+    <div class="aiHint">Цифры считает программа (с доверительными интервалами), ИИ только объясняет. Работает через сервер бота. <span id="aiLeft"></span></div>
+    <div class="aiOut" id="periodOut"></div>
+  </div>
+
+  <div class="card">
+    <h2>💬 Вопрос по моим сделкам</h2>
+    <div class="aiRow">
+      <input type="text" id="askInp" class="aiSel" style="flex:1" maxlength="300" placeholder="Например: почему вчера много минусов?">
+      <button class="aiBtn" id="askBtn" style="width:auto;padding:13px 20px">Спросить</button>
+    </div>
+    <div class="aiOut" id="askOut"></div>
+  </div>
 
   <div class="card">
     <h2>🤖 AI-разбор</h2>
@@ -1619,7 +1651,7 @@ function render(){
       <td>${t.emotion}</td>
       <td>${hasImg?`<button class="viewBtn" data-view="${t.id}">👁 смотреть</button>`:'—'}</td>
       <td><button class="analysisBadge ta-${verdict}" data-analysis="${t.id}" title="${ANALYSIS_TITLE[verdict]}">${ANALYSIS_ICON[verdict]}</button></td>
-      <td><button class="editBtn" data-edit="${t.id}">✏️</button><button class="del" data-id="${t.id}">✕</button></td>`;
+      <td><button class="aiTradeBtn" data-ai="${t.id}" title="ИИ-разбор этой сделки">🧠</button><button class="editBtn" data-edit="${t.id}">✏️</button><button class="del" data-id="${t.id}">✕</button></td>`;
     tbody.appendChild(tr);
   });
   document.querySelectorAll('.del').forEach(b=>b.onclick=()=>{
@@ -2601,9 +2633,88 @@ document.getElementById('addBtn').onclick=()=>{
 async function initAI(){ try{ sampleFn=await claude.use('sample'); }catch(e){ sampleFn=null; } }
 initAI();
 
+
+/* ===== ИИ через сервер бота (ключ Claude хранится только на сервере) ===== */
+function srvCfg(){ try{ const c=JSON.parse(localStorage.getItem('fxbo_srv_v1')||'{}'); return {url:(c.url||'').trim().replace(/\/+$/,''),key:(c.key||'').trim()}; }catch(e){ return {url:'',key:''}; } }
+function compactTrade(t){ return {d:t.date,t:t.time||'',p:t.pair,dir:t.direction,e:t.expiry,s:t.stake,r:t.result,pnl:pnl(t),emo:t.emotion||'',q:t.quality||'',n:(t.notes||'').slice(0,80)}; }
+async function serverAI(payload,onLeft){
+  const c=srvCfg();
+  if(!c.url||!c.key) throw new Error('Сначала укажи адрес и ключ сервера в настройках (⚙️ → Сервер бота).');
+  const ac=new AbortController(); const to=setTimeout(()=>ac.abort(),200000);
+  try{
+    const r=await fetch(c.url+'/ai?key='+encodeURIComponent(c.key),{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payload),signal:ac.signal});
+    if(r.status===403) throw new Error('Неверный ключ сервера.');
+    let j={}; try{ j=await r.json(); }catch(e){}
+    if(!r.ok||!j.ok) throw new Error(j.error||('Сервер ответил ошибкой '+r.status));
+    if(onLeft&&typeof j.left==='number') onLeft(j.left);
+    return j.text;
+  }catch(e){
+    if(e.name==='AbortError') throw new Error('Сервер долго не отвечает, попробуй ещё раз.');
+    if(e instanceof TypeError) throw new Error('Не удалось связаться с сервером. Проверь адрес и интернет.');
+    throw e;
+  }finally{ clearTimeout(to); }
+}
+function setAiLeft(n){ const el=document.getElementById('aiLeft'); if(el) el.textContent='Осталось разборов на сегодня: '+n; }
+async function askModel(prompt,out){
+  out.textContent='Думаю…';
+  if(sampleFn){
+    try{ const res=await sampleFn(prompt,{modelTier:'default',onText:({text})=>{out.textContent=text;}}); out.textContent=res.text; }
+    catch(e){ out.textContent='Не удалось получить разбор. Попробуй ещё раз.'; }
+    return;
+  }
+  try{ out.textContent=await serverAI({mode:'prompt',prompt},setAiLeft); }
+  catch(e){ out.textContent='⚠️ '+e.message; }
+}
+function periodTrades(kind){
+  const all=[...trades].sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
+  const today=new Date(); const iso=d=>d.toISOString().slice(0,10);
+  const back=n=>{ const d=new Date(); d.setDate(d.getDate()-n); return iso(d); };
+  if(kind==='today'){ const d=iso(today); return {rows:all.filter(t=>t.date===d),label:'сегодня'}; }
+  if(kind==='7'){ const d=back(7); return {rows:all.filter(t=>t.date>=d),label:'последние 7 дней'}; }
+  if(kind==='30'){ const d=back(30); return {rows:all.filter(t=>t.date>=d),label:'последние 30 дней'}; }
+  if(kind==='50') return {rows:all.slice(-50),label:'последние 50 сделок'};
+  return {rows:all,label:'всё время'};
+}
+function showAiModal(title,text){
+  let m=document.getElementById('aiModal');
+  if(!m){
+    m=document.createElement('div'); m.id='aiModal'; m.className='aiModal';
+    m.innerHTML='<div class="aiModalCard"><div class="aiModalHead"><b id="aiModalTitle"></b><button type="button" id="aiModalClose">✕</button></div><div class="aiOut" id="aiModalText" style="margin-top:8px"></div></div>';
+    document.body.appendChild(m);
+    m.onclick=e=>{ if(e.target===m) m.classList.remove('show'); };
+    m.querySelector('#aiModalClose').onclick=()=>m.classList.remove('show');
+  }
+  m.querySelector('#aiModalTitle').textContent=title;
+  m.querySelector('#aiModalText').textContent=text;
+  m.classList.add('show');
+}
+document.getElementById('periodBtn').onclick=async ()=>{
+  const out=document.getElementById('periodOut'); const {rows,label}=periodTrades(document.getElementById('periodSel').value);
+  const dec=rows.filter(t=>t.result==='win'||t.result==='loss');
+  if(dec.length<5){ out.textContent='За этот период меньше 5 сделок с исходом — разбирать нечего.'; return; }
+  out.textContent='Анализирую '+dec.length+' сделок…';
+  try{ out.textContent=await serverAI({mode:'period',label,trades:rows.slice(-400).map(compactTrade)},setAiLeft); }
+  catch(e){ out.textContent='⚠️ '+e.message; }
+};
+document.getElementById('askBtn').onclick=async ()=>{
+  const out=document.getElementById('askOut'); const q=document.getElementById('askInp').value.trim();
+  if(q.length<3){ out.textContent='Напиши вопрос.'; return; }
+  out.textContent='Думаю…';
+  try{ out.textContent=await serverAI({mode:'ask',question:q,trades:[...trades].sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)).slice(-400).map(compactTrade)},setAiLeft); }
+  catch(e){ out.textContent='⚠️ '+e.message; }
+};
+document.getElementById('tbody').addEventListener('click',async e=>{
+  const b=e.target.closest('[data-ai]'); if(!b) return;
+  const t=trades.find(x=>x.id===b.dataset.ai); if(!t) return;
+  const title='🧠 Разбор: '+t.pair+' '+t.date+' '+(t.time||'');
+  showAiModal(title,'Анализирую сделку…');
+  try{ showAiModal(title,await serverAI({mode:'trade',trade:compactTrade(t),trades:[...trades].sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)).slice(-400).map(compactTrade)},setAiLeft)); }
+  catch(err){ showAiModal(title,'⚠️ '+err.message); }
+});
+(async()=>{ try{ const c=srvCfg(); if(!c.url||!c.key) return; const r=await fetch(c.url+'/ai_status?key='+encodeURIComponent(c.key)); if(r.ok){ const j=await r.json(); setAiLeft(j.left); } }catch(e){} })();
+
 document.getElementById('aiBtn').onclick=async ()=>{
   const out=document.getElementById('aiOut');
-  if(!sampleFn){ out.textContent='ИИ недоступен в этом окне.'; return; }
   if(trades.length<3){ out.textContent='Добавь хотя бы 3 сделки для анализа.'; return; }
   out.textContent='Анализирую сделки...';
   const data=trades.map(t=>({pair:t.pair,dir:t.direction,exp:t.expiry,stake:t.stake,payout:t.payout,result:t.result,
@@ -2623,13 +2734,11 @@ ${JSON.stringify(data)}
 5. КАК БЫ Я ПОСТУПИЛ — опиши по шагам, как ты бы действовал в самых частых убыточных ситуациях этого трейдера (конкретная пара/время/эмоция).
 6. 3 ГЛАВНЫХ СОВЕТА на ближайшую неделю, простыми словами.
 Пиши тепло, по-дружески, без вступлений и воды.`;
-  try{ const res=await sampleFn(prompt,{modelTier:'default',onText:({text})=>{out.textContent=text;}}); out.textContent=res.text; }
-  catch(e){ out.textContent='Не удалось получить разбор. Попробуй ещё раз.'; }
+  await askModel(prompt,out);
 };
 
 document.getElementById('errBtn').onclick=async ()=>{
   const out=document.getElementById('errOut');
-  if(!sampleFn){ out.textContent='ИИ недоступен в этом окне.'; return; }
   if(trades.length<3){ out.textContent='Добавь хотя бы 3 сделки для анализа.'; return; }
   out.textContent='Ищу повторяющиеся ошибки...';
   const data=trades.map(t=>({pair:t.pair,dir:t.direction,exp:t.expiry,stake:t.stake,payout:t.payout,result:t.result,
@@ -2649,8 +2758,7 @@ ${JSON.stringify(data)}
 3. ОПАСНЫЙ ПАТТЕРН — если видно, что убыточные сделки чаще случаются в определённом эмоциональном состоянии (особенно "месть за убыток", "азарт/жадность", "сомнение") — опиши это отдельно, простыми словами.
 4. ЧТО СДЕЛАТЬ ПРЯМО СЕЙЧАС — 3 коротких конкретных действия, чтобы перестать повторять эти ошибки.
 Пиши коротко, по делу, дружелюбно, но честно — как будто указываешь другу прямо на его слабые места, чтобы он их видел чётко.`;
-  try{ const res=await sampleFn(prompt,{modelTier:'default',onText:({text})=>{out.textContent=text;}}); out.textContent=res.text; }
-  catch(e){ out.textContent='Не удалось получить разбор. Попробуй ещё раз.'; }
+  await askModel(prompt,out);
 };
 
 /* settings UI wiring (theme grid, toggles, drawer, draft autosave, quick repeat) */
