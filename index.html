@@ -116,10 +116,15 @@ button.submit.editMode{background:linear-gradient(90deg,#f5b942,#e0943a);color:#
 .editBtn:hover{border-color:var(--accent);background:rgba(108,140,255,.1);transform:translateY(-1px) scale(1.05);}
 button.submit:hover{filter:brightness(1.08);transform:translateY(-1px);}
 button.submit:active{transform:scale(.98);}
-.tablewrap{overflow-x:auto;}
+.tablewrap{overflow:auto;max-height:calc(100vh - 150px);}
 table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:880px;}
 th,td{text-align:left;padding:8px;border-bottom:1px solid var(--border);white-space:nowrap;}
 th{color:var(--muted);font-weight:500;font-size:10.5px;text-transform:uppercase;}
+.tablewrap thead th{position:sticky;top:0;z-index:2;background:var(--panel2);}
+.tablewrap th,.tablewrap td{padding:7px 6px;}
+/* вкладка «История»: шире страница, чтобы вся таблица помещалась без прокрутки вбок */
+body.wideTab .wrap,body.wideTab .tabBar{max-width:1640px;}
+@media(max-width:900px){.tablewrap{max-height:none;}}
 tbody tr{transition:.15s}
 tbody tr:hover{background:rgba(255,255,255,.03)}
 .badge{padding:3px 9px;border-radius:12px;font-size:10.5px;font-weight:800;}
@@ -1298,6 +1303,7 @@ function bindToggle(btnId,bodyId){
 }
 /* tabs */
 function switchTab(name){
+  document.body.classList.toggle('wideTab', name==='history');
   document.querySelectorAll('.tabBtn').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
   document.querySelectorAll('.tabPanel').forEach(p=>p.classList.toggle('active', p.dataset.tab===name));
   const panel=document.querySelector('.tabPanel[data-tab="'+name+'"]');
