@@ -14,12 +14,12 @@
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;position:relative;overflow-x:hidden;}
-.blob{position:fixed;border-radius:50%;filter:blur(70px);opacity:.16;z-index:0;pointer-events:none;animation:floatBlob 16s ease-in-out infinite;}
-.blob1{width:420px;height:420px;background:var(--mint);top:-120px;right:-100px;}
-.blob2{width:380px;height:380px;background:var(--accent);bottom:-140px;left:-100px;animation-delay:3s;}
+.blob{position:fixed;border-radius:50%;opacity:.2;z-index:0;pointer-events:none;}
+.blob1{width:620px;height:620px;background:radial-gradient(circle,var(--mint) 0%,transparent 66%);top:-260px;right:-240px;}
+.blob2{width:560px;height:560px;background:radial-gradient(circle,var(--accent) 0%,transparent 66%);bottom:-270px;left:-230px;}
 @keyframes floatBlob{0%,100%{transform:translate(0,0)}50%{transform:translate(30px,-25px)}}
 ::-webkit-scrollbar{height:8px;width:8px}::-webkit-scrollbar-thumb{background:#2a3140;border-radius:6px}
-.nav{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border);position:sticky;top:0;background:rgba(10,12,17,.85);backdrop-filter:blur(10px);z-index:5;}
+.nav{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border);position:sticky;top:0;background:rgba(10,12,17,.97);z-index:5;}
 .brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.4px;font-size:16px;}
 .settingsBtn{background:none;border:1px solid var(--border);color:var(--muted);width:34px;height:34px;border-radius:10px;cursor:pointer;font-size:16px;transition:.2s;display:flex;align-items:center;justify-content:center;}
 .settingsBtn:hover{border-color:var(--accent);color:var(--text);transform:rotate(45deg);}
@@ -27,7 +27,7 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,S
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 .wrap{max-width:1080px;margin:0 auto;padding:20px 16px 70px;position:relative;z-index:1;}
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
-.tabBar{position:sticky;top:47px;z-index:4;display:flex;gap:6px;max-width:1080px;margin:0 auto;padding:10px 16px;background:rgba(10,12,17,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);overflow-x:auto;}
+.tabBar{position:sticky;top:47px;z-index:4;display:flex;gap:6px;max-width:1080px;margin:0 auto;padding:10px 16px;background:rgba(10,12,17,.98);border-bottom:1px solid var(--border);overflow-x:auto;}
 .tabBtn{flex:none;display:flex;align-items:center;gap:7px;padding:9px 16px;border-radius:12px;border:1px solid transparent;background:transparent;color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;transition:.2s;white-space:nowrap;}
 .tabIco{font-size:14px;}
 .tabBtn:hover{color:var(--text);background:rgba(255,255,255,.05);}
@@ -35,6 +35,8 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,S
 .tabPanel{display:none;}
 .tabPanel.active{display:block;animation:tabIn .35s ease both;}
 @keyframes tabIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;transition-duration:.01ms!important;}}
+button,.chip,.tabBtn,.dayChip{touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
 .calAlign{max-width:640px;margin-left:auto;margin-right:0;}
 .newsAlign{max-width:640px;margin-right:auto;margin-left:0;}
 @media(max-width:760px){.calAlign,.newsAlign{max-width:100%;}}
@@ -444,6 +446,107 @@ tr.rowSel td{background:rgba(0,226,160,.07);}
 .taIcon{flex:none;font-size:13px;}
 .taTip{margin-top:4px;padding:12px 14px;border-radius:12px;background:rgba(108,140,255,.08);border:1px solid rgba(108,140,255,.3);font-size:12.5px;line-height:1.55;color:#dde3f0;display:flex;gap:10px;align-items:flex-start;animation:fadeUp .45s ease both;}
 .taTipIcon{flex:none;font-size:15px;}
+.moreRow td{padding:8px 6px;text-align:center;}
+.moreBtn{background:rgba(108,140,255,.1);border:1px dashed rgba(108,140,255,.45);color:var(--accent);border-radius:10px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;transition:.2s;}
+.moreBtn:hover{background:rgba(108,140,255,.2);}
+
+/* ===== Статистика дня ===== */
+.dayPicker{padding:16px 16px 12px;}
+.dpTop{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.dpNavBtn{width:38px;height:38px;border-radius:12px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--text);font-size:20px;line-height:1;cursor:pointer;transition:transform .15s,border-color .2s,background .2s;display:flex;align-items:center;justify-content:center;}
+.dpNavBtn:hover{border-color:var(--accent);background:rgba(108,140,255,.12);}
+.dpNavBtn:active{transform:scale(.9);}
+.dpDate{flex:1;min-width:150px;text-align:center;}
+.dpDate b{display:block;font-size:20px;letter-spacing:.2px;}
+.dpDate span{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;}
+.dpTools{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center;}
+.dpTool{padding:7px 13px;border-radius:20px;border:1px solid var(--border);background:#0d1017;color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;transition:.15s;}
+.dpTool:hover{border-color:var(--accent);color:var(--text);}
+.dpTool:active{transform:scale(.95);}
+.dpDateInp{width:auto!important;flex:none;padding:6px 10px;border-radius:12px;border:1px solid var(--border);background:#0d1017;color:var(--text);font-size:12px;color-scheme:dark;font-family:inherit;}
+.dayStrip{position:relative;display:flex;gap:7px;overflow-x:auto;padding:12px 2px 6px;margin-top:6px;scroll-behavior:smooth;scrollbar-width:thin;}
+.dayChip{flex:none;width:58px;padding:8px 4px 9px;border-radius:14px;border:1px solid var(--border);background:rgba(255,255,255,.03);color:var(--text);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;position:relative;transition:transform .18s,border-color .2s,background .2s,box-shadow .25s;font-family:inherit;}
+.dayChip i{font-style:normal;font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
+.dayChip b{font-size:17px;line-height:1.1;font-variant-numeric:tabular-nums;}
+.dayChip u{text-decoration:none;font-size:10px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--muted);}
+.dayChip.pos u{color:var(--mint);} .dayChip.neg u{color:var(--coral);}
+.dayChip::after{content:"";position:absolute;left:14px;right:14px;bottom:4px;height:2px;border-radius:2px;background:transparent;transition:background .2s;}
+.dayChip.pos::after{background:rgba(0,226,160,.55);} .dayChip.neg::after{background:rgba(255,90,110,.55);}
+.dayChip:hover{transform:translateY(-3px);border-color:var(--accent);}
+.dayChip.active{border-color:var(--accent);background:rgba(108,140,255,.16);box-shadow:0 8px 20px rgba(108,140,255,.25);transform:translateY(-2px);}
+.dayChip.today i{color:var(--mint);}
+
+#dayBody{will-change:transform,opacity;}
+#dayBody.fromR{animation:dayInR .38s cubic-bezier(.2,.8,.2,1) both;}
+#dayBody.fromL{animation:dayInL .38s cubic-bezier(.2,.8,.2,1) both;}
+#dayBody.fromN{animation:fadeUp .4s ease both;}
+@keyframes dayInR{from{opacity:0;transform:translateX(34px)}to{opacity:1;transform:none}}
+@keyframes dayInL{from{opacity:0;transform:translateX(-34px)}to{opacity:1;transform:none}}
+#dayBody .card{animation:none;}
+.dayHero{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;position:relative;overflow:hidden;}
+.dayHero::before{content:"";position:absolute;inset:0;opacity:.14;pointer-events:none;background:radial-gradient(circle at 15% 0%,var(--hc,var(--mint)),transparent 60%);}
+.dayHero.neg{--hc:var(--coral);} .dayHero.pos{--hc:var(--mint);}
+.dhLeft{position:relative;min-width:200px;flex:1;}
+.dhLabel{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;}
+.dhSum{font-size:44px;font-weight:900;line-height:1.1;margin:4px 0 6px;font-variant-numeric:tabular-nums;letter-spacing:-.5px;}
+.dhSum.pos{color:var(--mint);text-shadow:0 0 28px rgba(0,226,160,.35);} .dhSum.neg{color:var(--coral);text-shadow:0 0 28px rgba(255,90,110,.3);}
+.dhSub{font-size:12.5px;color:var(--muted);line-height:1.5;}
+.dhSub b{color:var(--text);}
+.dhPills{display:flex;gap:7px;margin-top:12px;flex-wrap:wrap;}
+.dhPill{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:800;font-variant-numeric:tabular-nums;}
+.dhPill.w{background:rgba(0,226,160,.14);color:var(--mint);} .dhPill.l{background:rgba(255,90,110,.14);color:var(--coral);} .dhPill.d{background:rgba(255,255,255,.08);color:var(--muted);}
+.dhRing{position:relative;width:128px;height:128px;flex:none;}
+.dhRing svg{width:100%;height:100%;transform:rotate(-90deg);}
+.dhRing .rbg{fill:none;stroke:rgba(255,255,255,.07);stroke-width:10;}
+.dhRing .rfg{fill:none;stroke:var(--mint);stroke-width:10;stroke-linecap:round;stroke-dasharray:326.7;stroke-dashoffset:326.7;transition:stroke-dashoffset 1.1s cubic-bezier(.2,.8,.2,1) .15s;filter:drop-shadow(0 0 6px rgba(0,226,160,.5));}
+.dhRing.neg .rfg{stroke:var(--coral);filter:drop-shadow(0 0 6px rgba(255,90,110,.45));}
+.dhRing .rtxt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.dhRing .rtxt b{font-size:26px;font-variant-numeric:tabular-nums;} .dhRing .rtxt span{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;}
+.dayKpi{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+@media(max-width:640px){.dayKpi{grid-template-columns:repeat(2,1fr);}}
+.dayKpi .stat{opacity:0;animation:fadeUp .45s ease both;}
+.dayKpi .stat b{font-size:18px;} .dayKpi .stat em{display:block;font-style:normal;font-size:10.5px;color:var(--muted);margin-top:2px;}
+.dayCurveWrap{position:relative;width:100%;}
+.dayCurveWrap svg{width:100%;height:auto;display:block;overflow:visible;}
+.dcLine{fill:none;stroke:var(--accent);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1;stroke-dashoffset:1;transition:stroke-dashoffset 1.2s cubic-bezier(.3,.7,.2,1);}
+.dcLine.go{stroke-dashoffset:0;}
+.dcArea{opacity:0;transition:opacity .9s ease .5s;} .dcArea.go{opacity:1;}
+.dcZero{stroke:rgba(255,255,255,.18);stroke-dasharray:4 5;stroke-width:1;}
+.dcGrid{stroke:rgba(255,255,255,.05);stroke-width:1;}
+.dcDot{transform-box:fill-box;transform-origin:center;transform:scale(0);transition:transform .35s cubic-bezier(.3,1.6,.5,1);cursor:pointer;stroke:var(--panel);stroke-width:2;}
+.dcDot.go{transform:scale(1);} .dcDot:hover{transform:scale(1.5);}
+.dcDot.w{fill:var(--mint);} .dcDot.l{fill:var(--coral);} .dcDot.d{fill:#8b94a8;}
+.dcAx{font-size:10px;fill:var(--muted);font-variant-numeric:tabular-nums;}
+.dayTip{position:absolute;pointer-events:none;background:#0d1017;border:1px solid var(--border);border-radius:10px;padding:7px 10px;font-size:11.5px;line-height:1.45;white-space:nowrap;opacity:0;transform:translate(-50%,-110%);transition:opacity .12s;z-index:3;box-shadow:0 8px 20px rgba(0,0,0,.45);}
+.dayTip.show{opacity:1;}
+.dayCols{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+@media(max-width:760px){.dayCols{grid-template-columns:1fr;} .dhSum{font-size:36px;}}
+.dayCols .card{margin-bottom:0;}
+.dbRow{display:grid;grid-template-columns:78px 1fr auto;gap:10px;align-items:center;padding:6px 0;font-size:12px;}
+.dbRow .nm{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.dbTrack{height:9px;border-radius:6px;background:rgba(255,255,255,.05);overflow:hidden;}
+.dbFill{height:100%;width:0;border-radius:6px;transition:width .9s cubic-bezier(.2,.8,.2,1) .15s;}
+.dbFill.pos{background:linear-gradient(90deg,#00c48c,var(--mint));} .dbFill.neg{background:linear-gradient(90deg,#c73a4e,var(--coral));}
+.dbVal{font-variant-numeric:tabular-nums;font-weight:800;text-align:right;white-space:nowrap;} .dbVal small{display:block;font-weight:500;font-size:10px;color:var(--muted);}
+.dayTl{position:relative;padding-left:4px;}
+.dtItem{display:grid;grid-template-columns:54px 14px 1fr;gap:10px;align-items:stretch;opacity:0;animation:fadeUp .4s ease both;}
+.dtTime{font-size:12px;font-weight:800;color:var(--muted);padding-top:12px;font-variant-numeric:tabular-nums;text-align:right;}
+.dtRail{position:relative;}
+.dtRail::before{content:"";position:absolute;left:6px;top:0;bottom:0;width:2px;background:var(--border);}
+.dtItem:first-child .dtRail::before{top:18px;} .dtItem:last-child .dtRail::before{bottom:calc(100% - 18px);}
+.dtRail i{position:absolute;left:1px;top:13px;width:12px;height:12px;border-radius:50%;background:var(--muted);border:2px solid var(--panel);}
+.dtItem.w .dtRail i{background:var(--mint);box-shadow:0 0 10px rgba(0,226,160,.6);} .dtItem.l .dtRail i{background:var(--coral);box-shadow:0 0 10px rgba(255,90,110,.55);}
+.dtCard{margin:5px 0;padding:10px 13px;border-radius:13px;background:rgba(255,255,255,.035);border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;cursor:pointer;transition:transform .15s,border-color .2s,background .2s;}
+.dtCard:hover{transform:translateX(4px);border-color:var(--accent);background:rgba(108,140,255,.07);}
+.dtMain{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;font-weight:700;}
+.dtMeta{font-size:11px;color:var(--muted);font-weight:500;}
+.dtPnl{font-size:15px;font-weight:900;font-variant-numeric:tabular-nums;}
+.dayEmpty{text-align:center;padding:42px 16px;}
+.dayEmpty .ei{font-size:46px;display:block;margin-bottom:8px;animation:emptyFloat 3s ease-in-out infinite;}
+@keyframes emptyFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+.dayEmpty p{color:var(--muted);font-size:13px;margin:6px 0 14px;}
+
+#dayBody .card.dIn{animation:fadeUp .5s ease both;}
 </style>
 </head>
 <body>
@@ -451,6 +554,7 @@ tr.rowSel td{background:rgba(0,226,160,.07);}
 <div class="nav"><div class="brand"><div class="dot"></div>TRADER JOURNAL PRIME</div><button type="button" class="settingsBtn" id="settingsBtn" title="Настройки дневника">⚙️</button></div>
 <div class="tabBar">
   <button class="tabBtn active" data-tab="stats"><span class="tabIco">📊</span>Обзор</button>
+  <button class="tabBtn" data-tab="day"><span class="tabIco">📅</span>День</button>
   <button class="tabBtn" data-tab="news"><span class="tabIco">📰</span>Новости</button>
   <button class="tabBtn" data-tab="risk"><span class="tabIco">💰</span>Риск-менеджмент</button>
   <button class="tabBtn" data-tab="goal"><span class="tabIco">🎯</span>Цель</button>
@@ -514,6 +618,24 @@ tr.rowSel td{background:rgba(0,226,160,.07);}
   </div>
 
 
+</div>
+
+<div class="tabPanel" data-tab="day">
+  <div class="card dayPicker">
+    <div class="dpTop">
+      <button type="button" class="dpNavBtn" data-dnav="-1" title="Предыдущий день (←)">‹</button>
+      <div class="dpDate"><b id="dpBig"></b><span id="dpWd"></span></div>
+      <button type="button" class="dpNavBtn" data-dnav="1" title="Следующий день (→)">›</button>
+    </div>
+    <div class="dpTools">
+      <button type="button" class="dpTool" data-djump="today">Сегодня</button>
+      <button type="button" class="dpTool" data-djump="best">🏆 Лучший день</button>
+      <button type="button" class="dpTool" data-djump="worst">💀 Худший день</button>
+      <input type="date" id="dayDate" class="dpDateInp" title="Выбрать любую дату">
+    </div>
+    <div class="dayStrip" id="dayStrip"></div>
+  </div>
+  <div id="dayBody"></div>
 </div>
 
 <div class="tabPanel" data-tab="goal">
@@ -1121,7 +1243,11 @@ let curPair='EUR/USD', curEmotion=EMOTIONS[0].l;
 let imgBeforeData=null, imgAfterData=null, hoveredShot=null;
 let hoveredNewsFactShot=null, newsFactImgDraft={};
 
-function save(){ try{ localStorage.setItem(KEY,JSON.stringify(trades)); }catch(e){ showToast('⚠️ Не удалось сохранить — в браузере закончилось место (обычно из-за скринов)'); } }
+let _saveT=null;
+function saveNow(){ clearTimeout(_saveT); _saveT=null; try{ localStorage.setItem(KEY,JSON.stringify(trades)); }catch(e){ showToast('⚠️ Не удалось сохранить — в браузере закончилось место (обычно из-за скринов)'); } }
+function save(){ clearTimeout(_saveT); _saveT=setTimeout(saveNow,350); }
+window.addEventListener('pagehide',()=>{ if(_saveT) saveNow(); });
+document.addEventListener('visibilitychange',()=>{ if(document.hidden&&_saveT) saveNow(); });
 /* ключи удалённых сделок (с сервера / Telegram / архива): чтобы они не возвращались при следующей синхронизации */
 const DELKEYS='fxbo_deleted_keys_v1';
 function getDeletedKeys(){ try{ return new Set(JSON.parse(localStorage.getItem(DELKEYS))||[]); }catch(e){ return new Set(); } }
@@ -1168,13 +1294,10 @@ function animateNum(el,to,prefix,decimals){
 /* stagger card entrance, scoped per tab panel so switching tabs replays it cleanly */
 function playCardStagger(panel){
   if(!panel) return;
-  const cards=panel.querySelectorAll(':scope > .card');
-  cards.forEach((c,i)=>{
-    c.style.animation='none';
-    void c.offsetHeight;
-    c.style.animation='';
-    c.style.animationDelay=(i*0.07)+'s';
-  });
+  const cards=[...panel.querySelectorAll(':scope > .card')];
+  cards.forEach(c=>{ c.style.animation='none'; });
+  void panel.offsetHeight;                       // одна перерисовка на все карточки, а не по одной
+  cards.forEach((c,i)=>{ c.style.animation=''; c.style.animationDelay=(Math.min(i,8)*0.07)+'s'; });
 }
 playCardStagger(document.querySelector('.tabPanel.active'));
 
@@ -1303,10 +1426,13 @@ function bindToggle(btnId,bodyId){
 }
 /* tabs */
 function switchTab(name){
+  _activeTab=name;
   document.body.classList.toggle('wideTab', name==='history');
   document.querySelectorAll('.tabBtn').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
   document.querySelectorAll('.tabPanel').forEach(p=>p.classList.toggle('active', p.dataset.tab===name));
   const panel=document.querySelector('.tabPanel[data-tab="'+name+'"]');
+  flushRender();
+  if(name==='day'&&window.dayScrollToActive) requestAnimationFrame(()=>dayScrollToActive(true));
   playCardStagger(panel);
   if(name==='stats'){
     requestAnimationFrame(()=>requestAnimationFrame(()=>{
@@ -1635,13 +1761,37 @@ function bindSelection(sorted){
   updateSelUI(sorted);
 }
 
+/* Перерисовываем только то, что сейчас на экране. Остальное помечаем «грязным» и дорисуем при переходе на вкладку. */
+let _activeTab='stats', _renderQueued=false, histLimit=150;
+const _dirty={hist:true,stats:true,day:true};
+function sortedTrades(){ return [...trades].sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)); }
 function render(){
-  const tbody=document.getElementById('tbody'); tbody.innerHTML='';
-  const sorted=[...trades].sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
+  _dirty.hist=_dirty.stats=_dirty.day=true;
   document.getElementById('emptyMsg').style.display=trades.length?'none':'block';
+  flushRender();
+  renderGoals();
+}
+function flushRender(){
+  if(_activeTab==='history'&&_dirty.hist){ _dirty.hist=false; renderHistory(sortedTrades()); }
+  if(_activeTab==='stats'&&_dirty.stats){
+    _dirty.stats=false; const sorted=sortedTrades();
+    renderStats(sorted); renderWeekday(sorted); renderCalendar(sorted); renderSessions(sorted); renderHourHeatmap(sorted); renderExpiry(sorted); renderQuality(sorted);
+  }
+  if(_activeTab==='day'&&_dirty.day){ _dirty.day=false; if(window.renderDay) renderDay(); }
+}
+function renderHistory(sorted){
+  const tbody=document.getElementById('tbody'); tbody.innerHTML='';
+  const hidden=Math.max(0,sorted.length-histLimit);
+  const shown=hidden?sorted.slice(-histLimit):sorted;
+  if(hidden){
+    const mr=document.createElement('tr'); mr.className='moreRow';
+    mr.innerHTML='<td colspan="'+document.querySelectorAll('.tablewrap thead th').length+'"><button type="button" class="moreBtn" id="histMore">⬆ Показать ещё '+Math.min(200,hidden)+' ранних сделок (скрыто '+hidden+')</button></td>';
+    tbody.appendChild(mr);
+  }
+  const frag=document.createDocumentFragment();
   const ANALYSIS_ICON={good:'✅',mixed:'⚖️',risky:'⚠️'};
   const ANALYSIS_TITLE={good:'Разбор: сделка сильная',mixed:'Разбор: смешанный результат',risky:'Разбор: высокий риск'};
-  sorted.forEach(t=>{
+  shown.forEach(t=>{
     const p=pnl(t); const hasImg=t.imgBefore||t.imgAfter; const ovCount=(t.overlaps||[]).length;
     const tr=document.createElement('tr');
     const sess=sessionFor(t.time);
@@ -1658,8 +1808,11 @@ function render(){
       <td>${hasImg?`<button class="viewBtn" data-view="${t.id}">👁 смотреть</button>`:'—'}</td>
       <td><button class="analysisBadge ta-${verdict}" data-analysis="${t.id}" title="${ANALYSIS_TITLE[verdict]}">${ANALYSIS_ICON[verdict]}</button></td>
       <td><button class="aiTradeBtn" data-ai="${t.id}" title="ИИ-разбор этой сделки">🧠</button><button class="editBtn" data-edit="${t.id}">✏️</button><button class="del" data-id="${t.id}">✕</button></td>`;
-    tbody.appendChild(tr);
+    frag.appendChild(tr);
   });
+  tbody.appendChild(frag);
+  const hm=document.getElementById('histMore');
+  if(hm) hm.onclick=()=>{ const box=document.querySelector('.tablewrap'); const before=box.scrollHeight; histLimit+=200; renderHistory(sortedTrades()); box.scrollTop+=box.scrollHeight-before; };
   document.querySelectorAll('.del').forEach(b=>b.onclick=()=>{
     const doDelete=()=>{ if(editingId===b.dataset.id) cancelEdit(); rememberDeleted(trades.filter(t=>t.id===b.dataset.id)); selIds.delete(b.dataset.id); trades=trades.filter(t=>t.id!==b.dataset.id);save();render(); };
     if(appSettings.confirmDelete) showConfirm('Удалить эту сделку? Действие необратимо.', doDelete);
@@ -1669,7 +1822,6 @@ function render(){
   document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{ const t=trades.find(x=>x.id===b.dataset.edit); if(t) startEdit(t); });
   document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{ const t=trades.find(x=>x.id===b.dataset.view); if(t) openLightbox(t); });
   document.querySelectorAll('[data-analysis]').forEach(b=>b.onclick=()=>{ const t=trades.find(x=>x.id===b.dataset.analysis); if(t) openLightbox(t); });
-  renderStats(sorted); renderWeekday(sorted); renderCalendar(sorted); renderSessions(sorted); renderHourHeatmap(sorted); renderExpiry(sorted); renderQuality(sorted); renderGoals();
 }
 
 function renderStats(sorted){
@@ -3017,6 +3169,210 @@ document.getElementById('quickRepeatBtn').onclick=()=>{
 };
 
 document.getElementById('f_date').value=new Date().toISOString().slice(0,10);
+
+/* ===== Статистика дня ===== */
+const dayState={sel:null,dir:0,first:true};
+const MON_GEN=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+const WD_FULL=['понедельник','вторник','среда','четверг','пятница','суббота','воскресенье'];
+function _p2(n){ return String(n).padStart(2,'0'); }
+function dayKeyOf(d){ return d.getFullYear()+'-'+_p2(d.getMonth()+1)+'-'+_p2(d.getDate()); }
+function dayToday(){ return dayKeyOf(new Date()); }
+function dayShift(key,n){ const d=new Date(key+'T00:00:00'); d.setDate(d.getDate()+n); return dayKeyOf(d); }
+function dayMoney(n){ return (n>=0?'+$':'-$')+Math.abs(n).toFixed(2); }
+function dayGroups(){
+  const m=new Map();
+  trades.forEach(t=>{ if(!t.date) return; if(!m.has(t.date)) m.set(t.date,[]); m.get(t.date).push(t); });
+  m.forEach(a=>a.sort((x,y)=>(x.time||'').localeCompare(y.time||'')));
+  return m;
+}
+function dayTradeStakes(t){ return (+t.stake||0)+(t.overlaps||[]).reduce((a,o)=>a+(+o.stake||0),0); }
+function animMoney(el,to){
+  const t0=performance.now(), dur=800;
+  function step(t){ const p=Math.min(1,(t-t0)/dur), e=1-Math.pow(1-p,3); el.textContent=dayMoney(to*e); if(p<1) requestAnimationFrame(step); else el.textContent=dayMoney(to); }
+  requestAnimationFrame(step);
+}
+function animInt(el,to,suffix){
+  const t0=performance.now(), dur=700;
+  function step(t){ const p=Math.min(1,(t-t0)/dur), e=1-Math.pow(1-p,3); el.textContent=Math.round(to*e)+(suffix||''); if(p<1) requestAnimationFrame(step); }
+  requestAnimationFrame(step);
+}
+function dayLabel(key){
+  const d=new Date(key+'T00:00:00');
+  return {big:d.getDate()+' '+MON_GEN[d.getMonth()]+' '+d.getFullYear(), wd:WD_FULL[weekdayIdx(key)]};
+}
+
+function dayScrollToActive(instant){
+  const strip=document.getElementById('dayStrip'); if(!strip) return;
+  const act=strip.querySelector('.dayChip.active'); if(!act||!strip.clientWidth) return;
+  const left=act.offsetLeft-strip.clientWidth/2+act.clientWidth/2;
+  strip.scrollTo({left:Math.max(0,left),behavior:instant?'auto':'smooth'});
+}
+
+function daySelect(key,dir){
+  dayState.dir=dir===undefined?(key>=(dayState.sel||key)?1:-1):dir;
+  if(key===dayState.sel){ dayState.dir=0; }
+  dayState.sel=key;
+  renderDay();
+}
+
+function renderDay(){
+  const root=document.getElementById('dayBody'); if(!root) return;
+  const groups=dayGroups(), today=dayToday();
+  if(!dayState.sel){
+    const days=[...groups.keys()].sort();
+    dayState.sel=groups.has(today)?today:(days.length?days[days.length-1]:today);
+  }
+  const key=dayState.sel;
+  const lab=dayLabel(key);
+  document.getElementById('dpBig').textContent=lab.big+(key===today?' · сегодня':'');
+  document.getElementById('dpWd').textContent=lab.wd;
+  const inp=document.getElementById('dayDate'); if(inp.value!==key) inp.value=key;
+
+  /* лента дней */
+  const keys=[...new Set([...groups.keys(),today,key])].sort();
+  const shownKeys=keys.slice(-60);
+  const strip=document.getElementById('dayStrip');
+  strip.innerHTML=shownKeys.map(k=>{
+    const l=groups.get(k)||[]; const sum=l.reduce((a,t)=>a+pnl(t),0);
+    const cls=!l.length?'':(sum>0?'pos':(sum<0?'neg':''));
+    const d=new Date(k+'T00:00:00');
+    return `<button type="button" class="dayChip ${cls}${k===key?' active':''}${k===today?' today':''}" data-d="${k}"><i>${DOW[weekdayIdx(k)]}</i><b>${d.getDate()}</b><u>${l.length?(sum>=0?'+':'-')+Math.abs(sum).toFixed(0):'·'}</u></button>`;
+  }).join('');
+  dayScrollToActive(dayState.first);
+  dayState.first=false;
+
+  /* тело дня */
+  root.className=dayState.dir>0?'fromR':(dayState.dir<0?'fromL':'fromN');
+  root.style.animation='none'; void root.offsetWidth; root.style.animation='';
+  const list=groups.get(key)||[];
+  if(!list.length){
+    const prev=[...groups.keys()].filter(k=>k<key).sort().pop();
+    const next=[...groups.keys()].filter(k=>k>key).sort()[0];
+    root.innerHTML=`<div class="card dayEmpty dIn"><span class="ei">🌙</span><b style="font-size:16px">В этот день сделок не было</b><p>${key>today?'Этот день ещё впереди.':'Выходной или пауза — тоже часть системы.'}</p>
+      <div class="dpTools" style="justify-content:center">${prev?`<button type="button" class="dpTool" data-d="${prev}">← Предыдущая торговля · ${dayLabel(prev).big}</button>`:''}${next?`<button type="button" class="dpTool" data-d="${next}">${dayLabel(next).big} · Следующая →</button>`:''}</div></div>`;
+    return;
+  }
+
+  const pn=list.map(pnl), sum=pn.reduce((a,b)=>a+b,0);
+  const wins=list.filter(t=>t.result==='win').length, losses=list.filter(t=>t.result==='loss').length, draws=list.length-wins-losses;
+  const wr=wins/list.length*100;
+  const turnover=list.reduce((a,t)=>a+dayTradeStakes(t),0), roi=turnover?sum/turnover*100:0;
+  let bi=0,wi=0; pn.forEach((v,i)=>{ if(v>pn[bi]) bi=i; if(v<pn[wi]) wi=i; });
+  const maxStake=Math.max(...list.map(dayTradeStakes)), avgStake=turnover/list.length;
+  let cw=0,cl=0,mw=0,ml=0; list.forEach(t=>{ if(t.result==='win'){cw++;cl=0;} else if(t.result==='loss'){cl++;cw=0;} mw=Math.max(mw,cw); ml=Math.max(ml,cl); });
+  const times=list.map(t=>t.time).filter(Boolean);
+  const allDays=[...groups.entries()].map(([k,l])=>[k,l.reduce((a,t)=>a+pnl(t),0)]);
+  const avgDay=allDays.reduce((a,x)=>a+x[1],0)/allDays.length;
+  const rank=allDays.filter(x=>x[1]>sum).length+1;
+  const cls=sum>=0?'pos':'neg';
+  const vs=allDays.length>1?`${sum>=avgDay?'Лучше':'Хуже'} среднего дня (${dayMoney(avgDay)}) на <b>${dayMoney(Math.abs(sum-avgDay)).replace(/^[+-]/,'')}</b> · ${rank}-й из ${allDays.length} по прибыли`:'Первый день в дневнике';
+
+  const hero=`<div class="card dayHero ${cls} dIn">
+      <div class="dhLeft"><div class="dhLabel">Результат дня</div><div class="dhSum ${cls}" id="dhSum">$0.00</div><div class="dhSub">${list.length} ${list.length%10===1&&list.length%100!==11?'сделка':([2,3,4].includes(list.length%10)&&![12,13,14].includes(list.length%100)?'сделки':'сделок')}${times.length?' · с '+times[0]+' до '+times[times.length-1]:''}<br>${vs}</div>
+        <div class="dhPills"><span class="dhPill w">✅ ${wins}</span><span class="dhPill l">❌ ${losses}</span>${draws?`<span class="dhPill d">➖ ${draws}</span>`:''}</div></div>
+      <div class="dhRing ${cls}"><svg viewBox="0 0 120 120"><circle class="rbg" cx="60" cy="60" r="52"/><circle class="rfg" id="dhRing" cx="60" cy="60" r="52"/></svg><div class="rtxt"><b id="dhWr">0%</b><span>винрейт</span></div></div>
+    </div>`;
+
+  const kpis=[
+    ['Сделок',list.length,''],['Оборот','$'+turnover.toFixed(0),'сумма ставок'],['ROI',(roi>=0?'+':'')+roi.toFixed(1)+'%','к обороту'],
+    ['Лучшая',dayMoney(pn[bi]),list[bi].pair],['Худшая',dayMoney(pn[wi]),list[wi].pair],
+    ['Макс. ставка','$'+maxStake.toFixed(0),'средняя $'+avgStake.toFixed(0)],['Серия побед',mw,''],['Серия минусов',ml,'']
+  ];
+  const kpiHtml=`<div class="card dayKpi dIn">${kpis.map((k,i)=>`<div class="stat" style="animation-delay:${.12+i*.05}s"><b class="${k[0]==='Лучшая'?'mint':(k[0]==='Худшая'?'coral':'')}">${k[1]}</b><span>${k[0]}</span>${k[2]?`<em>${k[2]}</em>`:''}</div>`).join('')}</div>`;
+
+  /* кривая баланса за день (SVG) */
+  const cum=[0]; pn.forEach(v=>cum.push(cum[cum.length-1]+v));
+  const W=640,H=230,L=46,R=14,T=14,B=26, iw=W-L-R, ih=H-T-B;
+  const mn=Math.min(0,...cum), mx=Math.max(0,...cum), span=(mx-mn)||1;
+  const X=i=>L+(list.length?i/list.length:0)*iw, Y=v=>T+(1-(v-mn)/span)*ih;
+  const pts=cum.map((v,i)=>[X(i),Y(v)]);
+  const path=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+  const area=path+` L${X(list.length).toFixed(1)} ${Y(0).toFixed(1)} L${X(0).toFixed(1)} ${Y(0).toFixed(1)} Z`;
+  const gridVals=[mn,mn+span/2,mx];
+  const col=sum>=0?'var(--mint)':'var(--coral)';
+  const dots=list.map((t,i)=>`<circle class="dcDot ${t.result==='win'?'w':(t.result==='loss'?'l':'d')}" data-i="${i}" cx="${pts[i+1][0].toFixed(1)}" cy="${pts[i+1][1].toFixed(1)}" r="5" style="transition-delay:${(.5+i*Math.min(.06,.9/list.length)).toFixed(2)}s"/>`).join('');
+  const curve=`<div class="card dIn"><h2>Баланс внутри дня</h2><div class="dayCurveWrap" id="dcWrap">
+      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">
+        <defs><linearGradient id="dcG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sum>=0?'#00e2a0':'#ff5a6e'}" stop-opacity=".35"/><stop offset="1" stop-color="${sum>=0?'#00e2a0':'#ff5a6e'}" stop-opacity="0"/></linearGradient></defs>
+        ${gridVals.map(v=>`<line class="dcGrid" x1="${L}" x2="${W-R}" y1="${Y(v).toFixed(1)}" y2="${Y(v).toFixed(1)}"/><text class="dcAx" x="${L-6}" y="${(Y(v)+3).toFixed(1)}" text-anchor="end">${v>=0?'+':'-'}${Math.abs(v).toFixed(0)}</text>`).join('')}
+        <line class="dcZero" x1="${L}" x2="${W-R}" y1="${Y(0).toFixed(1)}" y2="${Y(0).toFixed(1)}"/>
+        <path class="dcArea" d="${area}" fill="url(#dcG)"/>
+        <path class="dcLine" id="dcLine" pathLength="1" d="${path}" style="stroke:${col}"/>
+        ${dots}
+        <text class="dcAx" x="${L}" y="${H-6}">${times[0]||'старт'}</text><text class="dcAx" x="${W-R}" y="${H-6}" text-anchor="end">${times[times.length-1]||''}</text>
+      </svg><div class="dayTip" id="dayTip"></div></div></div>`;
+
+  /* разрезы */
+  function group(fn){
+    const m=new Map(); list.forEach(t=>{ const k=fn(t); if(!m.has(k)) m.set(k,{n:0,w:0,p:0}); const g=m.get(k); g.n++; if(t.result==='win') g.w++; g.p+=pnl(t); });
+    return [...m.entries()].sort((a,b)=>b[1].p-a[1].p);
+  }
+  function bars(rows){
+    const mxp=Math.max(...rows.map(r=>Math.abs(r[1].p)))||1;
+    return rows.map(r=>`<div class="dbRow"><span class="nm" title="${r[0]}">${r[0]}</span><div class="dbTrack"><div class="dbFill ${r[1].p>=0?'pos':'neg'}" data-w="${Math.max(4,Math.abs(r[1].p)/mxp*100).toFixed(0)}"></div></div><span class="dbVal ${r[1].p>=0?'mint':'coral'}">${dayMoney(r[1].p)}<small>${r[1].n} сд. · ${Math.round(r[1].w/r[1].n*100)}%</small></span></div>`).join('');
+  }
+  const cols=`<div class="dayCols dIn"><div class="card"><h2>По парам</h2>${bars(group(t=>t.pair))}</div><div class="card"><h2>По экспирации</h2>${bars(group(t=>t.expiry||'—'))}</div></div>`;
+
+  /* лента сделок */
+  const tl=list.map((t,i)=>{
+    const p=pn[i], res=t.result, ov=(t.overlaps||[]).length, hasImg=t.imgBefore||t.imgAfter;
+    return `<div class="dtItem ${res==='win'?'w':(res==='loss'?'l':'d')}" style="animation-delay:${(.25+Math.min(i,14)*.045).toFixed(2)}s"><div class="dtTime">${t.time||'—'}</div><div class="dtRail"><i></i></div>
+      <div class="dtCard" data-tid="${t.id}"><div><div class="dtMain">${t.pair}<span class="badge ${t.direction==='call'?'win':'loss'}">${t.direction==='call'?'▲ CALL':'▼ PUT'}</span><span class="badge sess">${t.expiry||''}</span><span class="badge ${res}">${String(res).toUpperCase()}</span></div>
+      <div class="dtMeta">ставка $${t.stake}${ov?' · докрытий '+ov:''}${t.quality==='mistake'?' · ❌ не система':(t.quality==='reference'?' · ✅ система':'')}${t.emotion?' · '+t.emotion:''}${hasImg?' · 👁':''}</div></div>
+      <div class="dtPnl ${p>=0?'mint':'coral'}">${dayMoney(p)}</div></div></div>`;
+  }).join('');
+  const tlCard=`<div class="card dIn"><h2>Сделки дня</h2><div class="dayTl">${tl}</div></div>`;
+
+  root.innerHTML=hero+kpiHtml+curve+cols+tlCard;
+  root.querySelectorAll('.dIn').forEach((c,i)=>{ c.style.animation='fadeUp .5s ease both'; c.style.animationDelay=(i*.07)+'s'; });
+
+  /* запуск анимаций после вставки */
+  animMoney(document.getElementById('dhSum'),sum);
+  animInt(document.getElementById('dhWr'),Math.round(wr),'%');
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    const ring=document.getElementById('dhRing'); if(ring) ring.style.strokeDashoffset=(326.7*(1-wr/100)).toFixed(1);
+    const ln=document.getElementById('dcLine'); if(ln) ln.classList.add('go');
+    root.querySelectorAll('.dcArea,.dcDot').forEach(e=>e.classList.add('go'));
+    root.querySelectorAll('.dbFill').forEach(e=>{ e.style.width=e.dataset.w+'%'; });
+  }));
+
+  /* подсказка на точках */
+  const wrap=document.getElementById('dcWrap'), tip=document.getElementById('dayTip');
+  if(wrap&&tip){
+    wrap.onpointerover=e=>{
+      const c=e.target.closest('.dcDot'); if(!c) return;
+      const i=+c.dataset.i, t=list[i], r=wrap.getBoundingClientRect(), cr=c.getBoundingClientRect();
+      tip.innerHTML=`<b>${t.time||''} · ${t.pair}</b><br>${t.direction==='call'?'▲':'▼'} ${t.expiry||''} · ${dayMoney(pn[i])}<br>баланс дня: ${dayMoney(cum[i+1])}`;
+      tip.style.left=(cr.left+cr.width/2-r.left)+'px'; tip.style.top=(cr.top-r.top)+'px'; tip.classList.add('show');
+    };
+    wrap.onpointerout=e=>{ if(e.target.closest('.dcDot')) tip.classList.remove('show'); };
+  }
+}
+
+/* события вкладки «День» */
+(function(){
+  const panel=document.querySelector('.tabPanel[data-tab="day"]'); if(!panel) return;
+  panel.addEventListener('click',e=>{
+    const chip=e.target.closest('[data-d]'); if(chip){ daySelect(chip.dataset.d); return; }
+    const nav=e.target.closest('[data-dnav]'); if(nav){ daySelect(dayShift(dayState.sel||dayToday(),+nav.dataset.dnav),+nav.dataset.dnav); return; }
+    const jump=e.target.closest('[data-djump]');
+    if(jump){
+      const g=dayGroups(); if(!g.size){ showToast('Пока нет сделок'); return; }
+      const arr=[...g.entries()].map(([k,l])=>[k,l.reduce((a,t)=>a+pnl(t),0)]);
+      arr.sort((a,b)=>jump.dataset.djump==='best'?b[1]-a[1]:a[1]-b[1]);
+      daySelect(jump.dataset.djump==='today'?dayToday():arr[0][0]); if(jump.dataset.djump==='today') return; return;
+    }
+    const card=e.target.closest('[data-tid]'); if(card){ const t=trades.find(x=>String(x.id)===card.dataset.tid); if(t) openLightbox(t); }
+  });
+  document.getElementById('dayDate').addEventListener('change',e=>{ if(e.target.value) daySelect(e.target.value); });
+  document.addEventListener('keydown',e=>{
+    if(_activeTab!=='day') return;
+    const tg=(e.target.tagName||'').toLowerCase(); if(tg==='input'||tg==='textarea'||tg==='select') return;
+    if(e.key==='ArrowLeft'){ daySelect(dayShift(dayState.sel||dayToday(),-1),-1); e.preventDefault(); }
+    if(e.key==='ArrowRight'){ daySelect(dayShift(dayState.sel||dayToday(),1),1); e.preventDefault(); }
+  });
+})();
+
 restoreDraftIfAny();
 render();
 renderNews();
