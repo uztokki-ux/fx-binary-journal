@@ -547,6 +547,11 @@ tr.rowSel td{background:rgba(0,226,160,.07);}
 .dayEmpty p{color:var(--muted);font-size:13px;margin:6px 0 14px;}
 
 #dayBody .card.dIn{animation:fadeUp .5s ease both;}
+.memBar{height:10px;border-radius:8px;background:rgba(255,255,255,.07);overflow:hidden;margin-top:10px;}
+.memFill{height:100%;width:0;border-radius:8px;background:linear-gradient(90deg,var(--mint),var(--accent));transition:width .5s;}
+.memFill.warn{background:linear-gradient(90deg,#f5b94a,#ff9a4a);}
+.memFill.bad{background:linear-gradient(90deg,#ff7a7a,#ff4a6a);}
+.memTxt{font-size:11.5px;color:var(--muted,#8b93a7);margin-top:6px;line-height:1.5;}
 </style>
 </head>
 <body>
@@ -982,6 +987,12 @@ tr.rowSel td{background:rgba(0,226,160,.07);}
     </div>
 
     <div class="settingsSection">
+      <div class="settingsLabel">💾 Память дневника</div>
+      <div class="memBar"><div class="memFill" id="memFill"></div></div>
+      <div class="memTxt" id="memTxt">считаю…</div>
+    </div>
+
+    <div class="settingsSection">
       <div class="settingsLabel">✈️ Импорт сделок из Telegram</div>
       <div class="settingsToggleRow">
         <span>Забирать сделки из моего бота</span>
@@ -1085,7 +1096,15 @@ const SOUND_TYPES={
   crystal:{name:'Кристалл', notes:[783.99,987.77,1174.66,1567.98], wave:'sine', gap:0.075},
   aurora:{name:'Аврора', wave:'triangle', sweep:{from:300,to:820,dur:0.42}, detune:6},
   matrix:{name:'Матрица', notes:[1174.66,932.33,739.99,587.33,466.16], wave:'square', gap:0.045},
-  quantum:{name:'Квант', wave:'sawtooth', sweep:{from:160,to:1800,dur:0.26}, detune:14}
+  quantum:{name:'Квант', wave:'sawtooth', sweep:{from:160,to:1800,dur:0.26}, detune:14},
+  bell:{name:'Колокольчик', notes:[1318.51,1567.98,2093.0], wave:'sine', gap:0.13},
+  harp:{name:'Арфа', notes:[392.0,493.88,587.33,783.99,987.77], wave:'triangle', gap:0.065},
+  zen:{name:'Дзен', notes:[329.63,392.0,493.88], wave:'sine', gap:0.17},
+  arcade:{name:'Аркада', notes:[659.25,783.99,1318.51,1046.5], wave:'square', gap:0.055},
+  drop:{name:'Капля', wave:'sine', sweep:{from:1500,to:520,dur:0.18}, detune:0},
+  laser:{name:'Лазер', wave:'sawtooth', sweep:{from:2200,to:240,dur:0.24}, detune:10},
+  sonar:{name:'Сонар', notes:[880.0,880.0], wave:'sine', gap:0.34},
+  fanfare:{name:'Фанфары', notes:[523.25,523.25,523.25,698.46,880.0], wave:'triangle', gap:0.1}
 };
 // a sound saved by a previous version of the app (chime/pulse/rise) no longer exists —
 // fall back so the settings UI always has a real swatch highlighted
@@ -3517,6 +3536,20 @@ function importTgArchive(){
     }catch(e){ showToast('Не получилось выгрузить: '+e.message); }
   };
 })();
+
+/* ===== Индикатор памяти дневника (чтобы сделки не перестали сохраняться из-за скринов) ===== */
+function updateMemMeter(){
+  const f=document.getElementById('memFill'), t=document.getElementById('memTxt'); if(!f||!t) return;
+  try{
+    const LIMIT=5000000;   // у браузера ~5 млн символов на сайт
+    let used=0; for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); used+=k.length+(localStorage.getItem(k)||'').length; }
+    const pct=Math.min(100,Math.round(used/LIMIT*100));
+    f.style.width=pct+'%'; f.className='memFill'+(pct>=90?' bad':pct>=70?' warn':'');
+    const withImg=trades.filter(x=>x.imgBefore||x.imgAfter).length;
+    t.textContent='Занято '+pct+'% ('+(used/1e6).toFixed(1)+' из ~5 МБ). Сделок: '+trades.length+', со скринами: '+withImg+'.'+(pct>=70?' Скоро кончится место: скачай сделки кнопкой в «Истории» и удали старые скрины.':'');
+  }catch(e){ t.textContent='Не получилось посчитать память.'; }
+}
+(function(){ const o=window.openSettings||openSettings; const b=document.getElementById('settingsBtn'); if(b) b.addEventListener('click',()=>setTimeout(updateMemMeter,50)); })();
 </script>
 </body>
 </html>
