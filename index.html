@@ -14,12 +14,12 @@
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;position:relative;overflow-x:hidden;}
-.blob{position:fixed;border-radius:50%;opacity:.2;z-index:0;pointer-events:none;}
+.blob{position:fixed;border-radius:50%;opacity:.2;z-index:0;pointer-events:none;will-change:transform;animation:floatBlob 16s ease-in-out infinite;}
 .blob1{width:620px;height:620px;background:radial-gradient(circle,var(--mint) 0%,transparent 66%);top:-260px;right:-240px;}
-.blob2{width:560px;height:560px;background:radial-gradient(circle,var(--accent) 0%,transparent 66%);bottom:-270px;left:-230px;}
+.blob2{animation-delay:3s;width:560px;height:560px;background:radial-gradient(circle,var(--accent) 0%,transparent 66%);bottom:-270px;left:-230px;}
 @keyframes floatBlob{0%,100%{transform:translate(0,0)}50%{transform:translate(30px,-25px)}}
 ::-webkit-scrollbar{height:8px;width:8px}::-webkit-scrollbar-thumb{background:#2a3140;border-radius:6px}
-.nav{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border);position:sticky;top:0;background:rgba(10,12,17,.97);z-index:5;}
+.nav{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border);position:sticky;top:0;background:rgba(10,12,17,.85);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);z-index:5;}
 .brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.4px;font-size:16px;}
 .settingsBtn{background:none;border:1px solid var(--border);color:var(--muted);width:34px;height:34px;border-radius:10px;cursor:pointer;font-size:16px;transition:.2s;display:flex;align-items:center;justify-content:center;}
 .settingsBtn:hover{border-color:var(--accent);color:var(--text);transform:rotate(45deg);}
@@ -27,7 +27,7 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,S
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 .wrap{max-width:1080px;margin:0 auto;padding:20px 16px 70px;position:relative;z-index:1;}
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
-.tabBar{position:sticky;top:47px;z-index:4;display:flex;gap:6px;max-width:1080px;margin:0 auto;padding:10px 16px;background:rgba(10,12,17,.98);border-bottom:1px solid var(--border);overflow-x:auto;}
+.tabBar{position:sticky;top:47px;z-index:4;display:flex;gap:6px;max-width:1080px;margin:0 auto;padding:10px 16px;background:rgba(10,12,17,.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--border);overflow-x:auto;}
 .tabBtn{flex:none;display:flex;align-items:center;gap:7px;padding:9px 16px;border-radius:12px;border:1px solid transparent;background:transparent;color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;transition:.2s;white-space:nowrap;}
 .tabIco{font-size:14px;}
 .tabBtn:hover{color:var(--text);background:rgba(255,255,255,.05);}
@@ -35,7 +35,6 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,S
 .tabPanel{display:none;}
 .tabPanel.active{display:block;animation:tabIn .35s ease both;}
 @keyframes tabIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;transition-duration:.01ms!important;}}
 button,.chip,.tabBtn,.dayChip{touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
 .calAlign{max-width:640px;margin-left:auto;margin-right:0;}
 .newsAlign{max-width:640px;margin-right:auto;margin-left:0;}
@@ -1164,7 +1163,76 @@ function playChime(type, big){
 applyAnimSetting();
 
 const KEY='fxbo_trades_v4';
+/* ===== Хранение: сделки (лёгкие) в localStorage, скриншоты в IndexedDB (там места в десятки раз больше) =====
+   В localStorage вместо картинки лежит метка 'idb'. Картинку подгружаем при старте и кладём обратно в сделку в памяти,
+   так что весь остальной код работает как раньше. Старые данные переезжают сами при первом сохранении. */
+const IMG_DB_NAME='fxbo_imgs_v1', IMG_STORE='img';
 let trades=[]; try{trades=JSON.parse(localStorage.getItem(KEY))||[];}catch(e){trades=[];}
+const idbSaved=new Map();      // ключ -> строка, которая точно лежит в IndexedDB
+const idbKeep=new Set();       // ключи, чьи картинки ещё не подгружены: метку в localStorage сохраняем, из IndexedDB не удаляем
+let idbHydrated=false, idbBroken=false, _idbP=null;
+(function(){ trades.forEach(t=>{ ['imgBefore','imgAfter'].forEach((f,i)=>{ if(t[f]==='idb'){ idbKeep.add(t.id+(i?'|a':'|b')); t[f]=null; } }); }); })();
+function idbOpen(){
+  if(_idbP) return _idbP;
+  _idbP=new Promise((res,rej)=>{
+    try{
+      const r=indexedDB.open(IMG_DB_NAME,1);
+      r.onupgradeneeded=()=>{ r.result.createObjectStore(IMG_STORE); };
+      r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); r.onblocked=()=>rej(new Error('blocked'));
+    }catch(e){ rej(e); }
+  });
+  _idbP.catch(()=>{ idbBroken=true; });
+  return _idbP;
+}
+function idbTx(mode,fn){ return idbOpen().then(db=>new Promise((res,rej)=>{ const tx=db.transaction(IMG_STORE,mode); const st=tx.objectStore(IMG_STORE); const out=fn(st); tx.oncomplete=()=>res(out&&out.result!==undefined?out.result:undefined); tx.onerror=()=>rej(tx.error); tx.onabort=()=>rej(tx.error||new Error('abort')); })); }
+function slotKey(t,f){ return t.id+(f==='imgBefore'?'|b':'|a'); }
+function planImages(){
+  const writes=[], deletes=[]; const seen=new Set();
+  trades.forEach(t=>['imgBefore','imgAfter'].forEach(f=>{
+    const k=slotKey(t,f), v=t[f]; seen.add(k);
+    if(typeof v==='string' && v.startsWith('data:')){ if(idbSaved.get(k)!==v) writes.push([k,v]); }
+    else if(idbHydrated && idbSaved.has(k) && !idbKeep.has(k)) deletes.push(k);
+  }));
+  if(idbHydrated) idbSaved.forEach((_,k)=>{ if(!seen.has(k)&&!idbKeep.has(k)) deletes.push(k); });
+  return {writes,deletes};
+}
+function buildLight(){
+  return trades.map(t=>{
+    const o=Object.assign({},t);
+    ['imgBefore','imgAfter'].forEach(f=>{
+      const k=slotKey(t,f), v=t[f];
+      if(typeof v==='string' && v.startsWith('data:')){ if(idbSaved.get(k)===v) o[f]='idb'; }
+      else if(idbKeep.has(k)) o[f]='idb';
+    });
+    return o;
+  });
+}
+function idbApply(plan){
+  if(idbBroken) return Promise.resolve(false);
+  return idbOpen().then(db=>new Promise((res,rej)=>{
+    const tx=db.transaction(IMG_STORE,'readwrite'); const st=tx.objectStore(IMG_STORE);
+    plan.writes.forEach(([k,v])=>st.put(v,k)); plan.deletes.forEach(k=>st.delete(k));
+    tx.oncomplete=()=>{ plan.writes.forEach(([k,v])=>idbSaved.set(k,v)); plan.deletes.forEach(k=>idbSaved.delete(k)); res(true); };
+    tx.onerror=()=>rej(tx.error); tx.onabort=()=>rej(tx.error||new Error('abort'));
+  })).catch(e=>{ console.warn('IndexedDB:',e); return false; });
+}
+function idbHydrate(){
+  const keys=[...idbKeep];
+  const finish=()=>{ idbHydrated=true; try{ render(); }catch(e){} try{ updateMemMeter(); }catch(e){} };
+  if(!keys.length){ idbOpen().catch(()=>{}); idbHydrated=true; return; }
+  idbOpen().then(db=>new Promise(res=>{
+    const tx=db.transaction(IMG_STORE,'readonly'); const st=tx.objectStore(IMG_STORE); let got=0;
+    keys.forEach(k=>{
+      const rq=st.get(k);
+      rq.onsuccess=()=>{ const v=rq.result; const id=k.slice(0,-2), slot=k.slice(-1)==='b'?'imgBefore':'imgAfter';
+        const t=trades.find(x=>x.id===id);
+        if(t && typeof v==='string'){ t[slot]=v; idbSaved.set(k,v); idbKeep.delete(k); }
+        else if(!t || v===undefined){ idbKeep.delete(k); }       // метка без картинки — убираем
+        got++; };
+    });
+    tx.oncomplete=()=>res(); tx.onerror=()=>res(); tx.onabort=()=>res();
+  })).then(finish).catch(finish);
+}
 let weekChart, expiryChart, qualityChart, simChart, sampleFn=null;
 let curDir='call', curExp='1м', curRes='win', curQuality='reference', overlapCount=0;
 let editingId=null;
@@ -1264,7 +1332,20 @@ let imgBeforeData=null, imgAfterData=null, hoveredShot=null;
 let hoveredNewsFactShot=null, newsFactImgDraft={};
 
 let _saveT=null;
-function saveNow(){ clearTimeout(_saveT); _saveT=null; try{ localStorage.setItem(KEY,JSON.stringify(trades)); }catch(e){ showToast('⚠️ Не удалось сохранить — в браузере закончилось место (обычно из-за скринов)'); } }
+function lsWrite(arr){ try{ localStorage.setItem(KEY,JSON.stringify(arr)); return true; }catch(e){ return false; } }
+function saveNow(){
+  clearTimeout(_saveT); _saveT=null;
+  const plan=planImages();
+  const needIdb=plan.writes.length||plan.deletes.length;
+  const ok=lsWrite(buildLight());                    // сразу: картинки, уже лежащие в IndexedDB, — меткой; новые пока как есть
+  if(needIdb){
+    idbApply(plan).then(done=>{
+      if(done){ const ok2=lsWrite(buildLight()); if(!ok2) showToast('⚠️ Не удалось сохранить — в браузере закончилось место'); }
+      else if(!ok) showToast('⚠️ Не удалось сохранить — в браузере закончилось место (обычно из-за скринов)');
+      try{ updateMemMeter(); }catch(e){}
+    });
+  } else if(!ok){ showToast('⚠️ Не удалось сохранить — в браузере закончилось место (обычно из-за скринов)'); }
+}
 function save(){ clearTimeout(_saveT); _saveT=setTimeout(saveNow,350); }
 window.addEventListener('pagehide',()=>{ if(_saveT) saveNow(); });
 document.addEventListener('visibilitychange',()=>{ if(document.hidden&&_saveT) saveNow(); });
@@ -3541,15 +3622,21 @@ function importTgArchive(){
 function updateMemMeter(){
   const f=document.getElementById('memFill'), t=document.getElementById('memTxt'); if(!f||!t) return;
   try{
-    const LIMIT=5000000;   // у браузера ~5 млн символов на сайт
+    const LIMIT=5000000;
     let used=0; for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); used+=k.length+(localStorage.getItem(k)||'').length; }
     const pct=Math.min(100,Math.round(used/LIMIT*100));
-    f.style.width=pct+'%'; f.className='memFill'+(pct>=90?' bad':pct>=70?' warn':'');
+    f.style.width=Math.max(pct,2)+'%'; f.className='memFill'+(pct>=90?' bad':pct>=70?' warn':'');
     const withImg=trades.filter(x=>x.imgBefore||x.imgAfter).length;
-    t.textContent='Занято '+pct+'% ('+(used/1e6).toFixed(1)+' из ~5 МБ). Сделок: '+trades.length+', со скринами: '+withImg+'.'+(pct>=70?' Скоро кончится место: скачай сделки кнопкой в «Истории» и удали старые скрины.':'');
+    const base='Сделки и настройки: '+pct+'% ('+(used/1e6).toFixed(1)+' из ~5 МБ). Сделок: '+trades.length+', со скринами: '+withImg+'.';
+    t.textContent=base+(pct>=85?' Место почти кончилось — скачай сделки кнопкой в «Истории».':'');
+    if(navigator.storage&&navigator.storage.estimate){ navigator.storage.estimate().then(e=>{ if(e&&e.usage!=null) t.textContent=base+' Всего у дневника в браузере: '+(e.usage/1e6).toFixed(0)+' МБ (скрины хранятся отдельно, места там много).'+(pct>=85?' Место под сделки почти кончилось — скачай сделки кнопкой в «Истории».':''); }).catch(()=>{}); }
   }catch(e){ t.textContent='Не получилось посчитать память.'; }
 }
 (function(){ const o=window.openSettings||openSettings; const b=document.getElementById('settingsBtn'); if(b) b.addEventListener('click',()=>setTimeout(updateMemMeter,50)); })();
+
+/* старт: подгружаем скриншоты из IndexedDB и просим браузер не вычищать данные дневника */
+idbHydrate();
+try{ if(navigator.storage&&navigator.storage.persist) navigator.storage.persist(); }catch(e){}
 </script>
 </body>
 </html>
