@@ -863,6 +863,7 @@ tr.rowSel td{background:rgba(0,226,160,.07);}
 
   <div class="card tablewrap">
     <h2>История сделок</h2>
+    <div class="selBar" style="margin-bottom:8px"><button type="button" id="exportAllBtn" title="Скачивает файл со всеми сделками (без скриншотов) — для анализа">📤 Скачать все сделки (для анализа)</button></div>
     <div class="selBar" id="selBar">
       <label class="selAll"><input type="checkbox" id="selAllChk"> все</label>
       <span class="selLast">последние <input type="number" id="selN" min="1" value="10"> <button type="button" id="selLastBtn">выбрать</button></span>
@@ -3500,6 +3501,21 @@ function importTgArchive(){
   };
   $('srvPullBtn').onclick=()=>pull(true);
   renderBox(); schedule();
+})();
+
+/* ===== Выгрузка всех сделок в файл (без скриншотов) ===== */
+(function(){
+  const b=document.getElementById('exportAllBtn'); if(!b) return;
+  b.onclick=()=>{
+    try{
+      const rows=trades.map(t=>{ const o=Object.assign({},t); o.imgBefore=t.imgBefore?'есть':null; o.imgAfter=t.imgAfter?'есть':null; return o; });
+      const blob=new Blob([JSON.stringify({exported:new Date().toISOString(),count:rows.length,trades:rows},null,1)],{type:'application/json'});
+      const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+      a.download='journal_trades_'+new Date().toISOString().slice(0,10)+'.json';
+      document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},500);
+      showToast('📤 Файл со сделками ('+rows.length+') скачан');
+    }catch(e){ showToast('Не получилось выгрузить: '+e.message); }
+  };
 })();
 </script>
 </body>
