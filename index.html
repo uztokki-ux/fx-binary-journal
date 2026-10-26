@@ -360,6 +360,17 @@ tr.rowSel td{background:rgba(0,226,160,.07);}
 .aiModalHead{display:flex;justify-content:space-between;gap:10px;align-items:center}
 .aiModalHead button{background:none;border:none;color:inherit;font-size:18px;cursor:pointer}
 .aiOut{white-space:pre-wrap;font-size:13.5px;line-height:1.65;margin-top:14px;color:#dde3f0;}
+.chartShots{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.chartShots .shotBox{height:150px;}
+.chartShots .shotBox img{object-fit:contain;}
+.shotBox.dragOver{border-color:var(--accent);background:rgba(108,140,255,.08);}
+.chartOpt{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px;}
+.chartOpt .lbl{font-size:11.5px;color:var(--muted);min-width:84px;}
+.chartOpt .chips,.chartShots .chips{margin-bottom:0;}
+.chartShots .chips{margin-top:6px;}
+.aiBtn:disabled{opacity:.6;cursor:wait;transform:none;}
+.chartPairSel{flex:0 0 220px;width:auto;}
+@media (max-width:560px){ .chartShots{grid-template-columns:1fr;} .chartOpt .lbl{min-width:0;width:100%;} .chartPairSel{flex:1 1 100%;} }
 .chartWrap{position:relative;height:220px;width:100%;}
 .chartWrap canvas{position:absolute;inset:0;width:100%!important;height:100%!important;}
 .calHead{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
@@ -884,6 +895,41 @@ tr.rowSel td{background:rgba(0,226,160,.07);}
 </div>
 
 <div class="tabPanel" data-tab="ai">
+
+  <div class="card" id="chartCard">
+    <h2>📸 Разбор графика по скрину</h2>
+    <div class="aiHint" style="margin:0 0 10px">ИИ читает график по твоему методу — 7 шагов: тренд и потенциал, области, свечи, серия, импульс, откат или разворот, итог с экспирацией. Вставь скрин (Ctrl+V), перетащи файл или нажми на рамку.</div>
+    <div class="chartShots">
+      <div>
+        <div class="shotBox" id="chartBox1">
+          <input type="file" accept="image/*" id="chartFile1" hidden>
+          <div class="shotPh" id="chartPh1">📷 Главный скрин — график на момент входа<br>Ctrl+V, перетащи или нажми</div>
+          <img id="chartPrev1" alt=""><button type="button" class="shotClear" id="chartClear1">✕</button>
+        </div>
+      </div>
+      <div>
+        <div class="shotBox" id="chartBox2">
+          <input type="file" accept="image/*" id="chartFile2" hidden>
+          <div class="shotPh" id="chartPh2">📷 Второй скрин (по желанию)<br>после входа или другой таймфрейм</div>
+          <img id="chartPrev2" alt=""><button type="button" class="shotClear" id="chartClear2">✕</button>
+        </div>
+        <div class="chips" id="chartLbl2"><div class="chip active" data-v="after">после входа</div><div class="chip" data-v="tf">другой таймфрейм</div></div>
+      </div>
+    </div>
+    <div class="chartOpt"><span class="lbl">Мой вход</span>
+      <div class="chips" id="chartDir"><div class="chip active" data-v="">не входил — оцени сам</div><div class="chip" data-v="call">▲ вверх</div><div class="chip" data-v="put">▼ вниз</div></div></div>
+    <div class="chartOpt"><span class="lbl">Экспирация</span>
+      <div class="chips" id="chartExp"><div class="chip active" data-v="">—</div><div class="chip" data-v="1м">1м</div><div class="chip" data-v="2м">2м</div><div class="chip" data-v="3м">3м</div><div class="chip" data-v="4м">4м</div><div class="chip" data-v="5м">5м</div></div></div>
+    <div class="chartOpt"><span class="lbl">Результат</span>
+      <div class="chips" id="chartRes"><div class="chip active" data-v="">—</div><div class="chip" data-v="win">WIN</div><div class="chip" data-v="loss">LOSS</div></div></div>
+    <div class="aiRow" style="margin-top:10px">
+      <select id="chartPair" class="aiSel chartPairSel"><option value="">Пара — не обязательно</option></select>
+      <input type="text" id="chartNote" class="aiSel" style="flex:1" maxlength="300" placeholder="Что видел и почему вошёл (по желанию)">
+    </div>
+    <button class="aiBtn" id="chartBtn" style="margin-top:10px">📸 Разобрать по моему методу</button>
+    <div class="aiHint">Лучше целый скрин со шкалой цен и временем. Один разбор — это 1 из суточного лимита. Сделку со скринами можно разобрать кнопкой 📸 в «Истории».</div>
+    <div class="aiOut" id="chartOut"></div>
+  </div>
 
   <div class="card">
     <h2>🧠 Разбор периода</h2>
@@ -1595,6 +1641,10 @@ updateEmoBtn();
 document.addEventListener('click',(e)=>{ if(!pairPicker.contains(e.target)) pairPicker.classList.remove('open'); if(!emoPicker.contains(e.target)) emoPicker.classList.remove('open'); });
 
 /* screenshots + ctrl+v paste */
+/* 26.10: скрины сделки храним крупнее (1100 px) — чтобы по ним работал разбор графика 📸. Пока IndexedDB работает,
+   места хватает; если браузер её не даёт (скрины тогда лежат в localStorage) — по-старому 480 px. */
+function shotW(){ return idbBroken?480:1100; }
+function shotQ(){ return idbBroken?0.72:0.8; }
 function resizeImage(fileOrBlob,maxW,quality){
   return new Promise((resolve,reject)=>{
     const reader=new FileReader();
@@ -1620,7 +1670,7 @@ function setupShot(boxId,inputId,phId,prevId,clearId,key,setter){
   box.onclick=()=>input.click();
   box.addEventListener('mouseenter',()=>{ hoveredShot=key; box.classList.add('hoverActive'); });
   box.addEventListener('mouseleave',()=>{ if(hoveredShot===key) hoveredShot=null; box.classList.remove('hoverActive'); });
-  input.onchange=async ()=>{ const f=input.files[0]; if(!f) return; const url=await resizeImage(f,480,0.72); setter(url); showShotPreview(key,url); };
+  input.onchange=async ()=>{ const f=input.files[0]; if(!f) return; const url=await resizeImage(f,shotW(),shotQ()); setter(url); showShotPreview(key,url); };
   clearBtn.onclick=(e)=>{ e.stopPropagation(); setter(null); input.value='';
     document.getElementById(prevId).style.display='none'; document.getElementById(phId).style.display='flex'; clearBtn.style.display='none'; };
 }
@@ -1631,7 +1681,7 @@ document.addEventListener('paste', async (e)=>{
   const items=(e.clipboardData||window.clipboardData).items;
   for(const item of items){
     if(item.type.indexOf('image')!==-1){
-      const blob=item.getAsFile(); const url=await resizeImage(blob,480,0.72);
+      const blob=item.getAsFile(); const url=hoveredShot?await resizeImage(blob,shotW(),shotQ()):await resizeImage(blob,480,0.72);
       if(hoveredShot){
         if(hoveredShot==='Before'){ imgBeforeData=url; } else { imgAfterData=url; }
         showShotPreview(hoveredShot,url);
@@ -1908,7 +1958,7 @@ function renderHistory(sorted){
       <td>${t.emotion}</td>
       <td>${hasImg?`<button class="viewBtn" data-view="${t.id}">👁 смотреть</button>`:'—'}</td>
       <td><button class="analysisBadge ta-${verdict}" data-analysis="${t.id}" title="${ANALYSIS_TITLE[verdict]}">${ANALYSIS_ICON[verdict]}</button></td>
-      <td><button class="aiTradeBtn" data-ai="${t.id}" title="ИИ-разбор этой сделки">🧠</button><button class="editBtn" data-edit="${t.id}">✏️</button><button class="del" data-id="${t.id}">✕</button></td>`;
+      <td><button class="aiTradeBtn" data-ai="${t.id}" title="ИИ-разбор этой сделки">🧠</button>${hasImg?`<button class="aiTradeBtn" data-aichart="${t.id}" title="Разбор графика по скрину (по методу, 7 шагов)">📸</button>`:''}<button class="editBtn" data-edit="${t.id}">✏️</button><button class="del" data-id="${t.id}">✕</button></td>`;
     frag.appendChild(tr);
   });
   tbody.appendChild(frag);
@@ -2969,6 +3019,102 @@ document.getElementById('tbody').addEventListener('click',async e=>{
   showAiModal(title,'Анализирую сделку…');
   try{ showAiModal(title,await serverAI({mode:'trade',trade:compactTrade(t),trades:[...trades].sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)).slice(-400).map(compactTrade)},setAiLeft)); }
   catch(err){ showAiModal(title,'⚠️ '+err.message); }
+});
+
+/* ===== 📸 Разбор графика по скрину — по методу владельца, 7 шагов (26.10) =====
+   Картинка ужимается до 1568 px по длинной стороне (больше Claude всё равно не смотрит) и уходит на сервер бота (режим chart). */
+function resizeImageMax(fileOrBlob,maxSide,quality){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const img=new Image();
+      img.onload=()=>{
+        const scale=Math.min(1,maxSide/Math.max(img.width,img.height)); const w=Math.round(img.width*scale), h=Math.round(img.height*scale);
+        const c=document.createElement('canvas'); c.width=w; c.height=h;
+        const ctx=c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,w,h); ctx.drawImage(img,0,0,w,h);
+        resolve({data:c.toDataURL('image/jpeg',quality),w});
+      };
+      img.onerror=reject; img.src=e.target.result;
+    };
+    reader.onerror=reject; reader.readAsDataURL(fileOrBlob);
+  });
+}
+function imgWidth(url){ return new Promise(res=>{ const i=new Image(); i.onload=()=>res(i.naturalWidth||0); i.onerror=()=>res(0); i.src=url; }); }
+const CHART_WAIT='Смотрю график по 7 шагам… обычно 20–60 секунд.';
+const chartShots=[null,null];
+let chartLbl2='after', chartDirV='', chartExpV='', chartResV='', hoveredChart=-1, chartReqId=0;
+function setChartShot(i,shot){
+  chartShots[i]=shot; const n=i+1;
+  const prev=document.getElementById('chartPrev'+n), ph=document.getElementById('chartPh'+n), clr=document.getElementById('chartClear'+n);
+  if(shot){ prev.src=shot.data; prev.style.display='block'; ph.style.display='none'; clr.style.display='block'; }
+  else { prev.removeAttribute('src'); prev.style.display='none'; ph.style.display='flex'; clr.style.display='none'; }
+}
+async function takeChartFile(i,file){
+  if(!file||!/^image\//.test(file.type||'')){ showToast('Нужна картинка — скриншот графика'); return; }
+  try{ setChartShot(i,await resizeImageMax(file,1568,0.85)); }
+  catch(e){ showToast('Не получилось открыть картинку'); }
+}
+[0,1].forEach(i=>{
+  const n=i+1, box=document.getElementById('chartBox'+n), input=document.getElementById('chartFile'+n);
+  box.onclick=()=>input.click();
+  input.onchange=()=>{ const f=input.files[0]; input.value=''; if(f) takeChartFile(i,f); };
+  document.getElementById('chartClear'+n).onclick=e=>{ e.stopPropagation(); setChartShot(i,null); };
+  box.addEventListener('mouseenter',()=>{ hoveredChart=i; box.classList.add('hoverActive'); });
+  box.addEventListener('mouseleave',()=>{ if(hoveredChart===i) hoveredChart=-1; box.classList.remove('hoverActive'); });
+  box.addEventListener('dragover',e=>{ e.preventDefault(); box.classList.add('dragOver'); });
+  box.addEventListener('dragleave',()=>box.classList.remove('dragOver'));
+  box.addEventListener('drop',e=>{
+    e.preventDefault(); box.classList.remove('dragOver');
+    const fs=[...((e.dataTransfer&&e.dataTransfer.files)||[])].filter(f=>/^image\//.test(f.type||''));
+    if(fs[0]) takeChartFile(i,fs[0]);
+    if(fs[1]&&i===0) takeChartFile(1,fs[1]);
+  });
+});
+function chartChips(id,cb){
+  document.querySelectorAll('#'+id+' .chip').forEach(c=>c.onclick=()=>{
+    document.querySelectorAll('#'+id+' .chip').forEach(x=>x.classList.remove('active')); c.classList.add('active'); cb(c.dataset.v);
+  });
+}
+chartChips('chartLbl2',v=>chartLbl2=v); chartChips('chartDir',v=>chartDirV=v); chartChips('chartExp',v=>chartExpV=v); chartChips('chartRes',v=>chartResV=v);
+(function(){ const s=document.getElementById('chartPair'); PAIRS.forEach(p=>{ const o=document.createElement('option'); o.value=p; o.textContent=p; s.appendChild(o); }); })();
+/* Ctrl+V на вкладке «Аналитика»: скрин идёт в рамку под курсором, иначе в первую свободную */
+document.addEventListener('paste',e=>{
+  const panel=document.querySelector('.tabPanel[data-tab="ai"]');
+  if(!panel||!panel.classList.contains('active')) return;
+  const items=[...(((e.clipboardData||window.clipboardData)||{}).items||[])];
+  const tg=e.target, inField=tg&&(tg.tagName==='INPUT'||tg.tagName==='TEXTAREA');
+  if(inField&&items.some(it=>it.type==='text/plain')) return;      // обычная вставка текста в поле
+  const it=items.find(x=>x.type.indexOf('image')!==-1); if(!it) return;
+  e.preventDefault();
+  const i=hoveredChart>=0?hoveredChart:(!chartShots[0]?0:(!chartShots[1]?1:0));
+  takeChartFile(i,it.getAsFile());
+});
+document.getElementById('chartBtn').onclick=async ()=>{
+  const out=document.getElementById('chartOut'), btn=document.getElementById('chartBtn');
+  const main=chartDirV?'before':'chart', shots=[];
+  if(chartShots[0]) shots.push({data:chartShots[0].data,w:chartShots[0].w,label:main});
+  if(chartShots[1]) shots.push({data:chartShots[1].data,w:chartShots[1].w,label:chartShots[0]?chartLbl2:main});
+  if(!shots.length){ out.textContent='Сначала вставь скрин графика (Ctrl+V) или нажми на рамку и выбери файл.'; return; }
+  const info={p:document.getElementById('chartPair').value,dir:chartDirV,e:chartExpV,r:chartResV,n:document.getElementById('chartNote').value.trim().slice(0,300)};
+  btn.disabled=true; out.textContent=CHART_WAIT;
+  try{ out.textContent=await serverAI({mode:'chart',images:shots,info},setAiLeft); }
+  catch(e){ out.textContent='⚠️ '+e.message; }
+  finally{ btn.disabled=false; }
+};
+/* 📸 у сделки в «Истории»: разбор по её скринам (до и после) + что известно о входе */
+document.getElementById('tbody').addEventListener('click',async e=>{
+  const b=e.target.closest('[data-aichart]'); if(!b) return;
+  const t=trades.find(x=>x.id===b.dataset.aichart); if(!t) return;
+  const title='📸 Разбор по скрину: '+t.pair+' '+t.date+' '+(t.time||'');
+  const imgs=[];
+  if(typeof t.imgBefore==='string'&&t.imgBefore.startsWith('data:')) imgs.push({data:t.imgBefore,label:'before'});
+  if(typeof t.imgAfter==='string'&&t.imgAfter.startsWith('data:')) imgs.push({data:t.imgAfter,label:'after'});
+  if(!imgs.length){ showAiModal(title,idbHydrated?'У этой сделки нет скриншота.':'Скриншоты ещё загружаются — попробуй через пару секунд.'); return; }
+  for(const im of imgs) im.w=await imgWidth(im.data);
+  const my=++chartReqId; showAiModal(title,CHART_WAIT);
+  const info={p:t.pair,dir:t.direction,e:t.expiry,r:t.result,n:(t.notes||'').slice(0,300),d:t.date,t:t.time||''};
+  let txt; try{ txt=await serverAI({mode:'chart',images:imgs,info},setAiLeft); }catch(err){ txt='⚠️ '+err.message; }
+  if(my===chartReqId) showAiModal(title,txt);
 });
 (async()=>{ try{ const c=srvCfg(); if(!c.url||!c.key) return; const r=await fetch(c.url+'/ai_status?key='+encodeURIComponent(c.key)); if(r.ok){ const j=await r.json(); setAiLeft(j.left); } }catch(e){} })();
 
